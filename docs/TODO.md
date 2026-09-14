@@ -20,8 +20,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
         ON_FAILURE×3), Postgres (template oficial, volumen 5 GB) y
         `https://task-dashboard-api-production-9cb0.up.railway.app`. Variables: `DATABASE_URL`
         referencia al Postgres; `SYNTROAUTH_*` con `JWKS_URL` **placeholder**.
-      - [ ] ⛔ Gabriel: mergear el PR #1 (`main` todavía no tiene Dockerfile → el primer deploy
-        falló, esperado) y verificar `curl .../health` + log `migraciones al día`.
+      - [x] PR #1 y #2 mergeados por Gabriel (2026-09-14). Verificado en producción: `/health`
+        200 (1,4 s despertando), log `base conectada y migraciones al día`, app sleeping
+        funcionando (duerme a los ~8 min, despierta con la primera request).
       - [ ] ⛔ Gabriel: URL real de syntroAuth para `SYNTROAUTH_JWKS_URL` (hoy es un placeholder:
         `/api` da 503 hasta cambiarla). No aparece ningún proyecto syntroAuth en esta cuenta de
         Railway (`list-projects`: stellar-wisdom, enthusiastic-friendship, examples-patterns).

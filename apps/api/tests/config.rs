@@ -2,12 +2,26 @@
 
 use task_dashboard_api::config::{Config, ConfigError};
 
-fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
-    let vars: Vec<(String, String)> = vars
+const AUTH: [(&str, &str); 3] = [
+    ("SYNTROAUTH_ISSUER", "SyntroAuth"),
+    ("SYNTROAUTH_AUDIENCE", "SyntroAuth"),
+    ("SYNTROAUTH_JWKS_URL", "http://auth/.well-known/jwks.json"),
+];
+
+/// Variables de prueba: las tres de syntroAuth siempre presentes salvo que el test las pise.
+fn env(extra: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
+    let vars: Vec<(String, String)> = AUTH
         .iter()
+        .chain(extra.iter())
         .map(|(n, v)| (n.to_string(), v.to_string()))
         .collect();
-    move |k| vars.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone())
+    // El último gana: así un test puede pisar una de AUTH con "" para probar su ausencia.
+    move |k| {
+        vars.iter()
+            .rev()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+    }
 }
 
 #[test]
@@ -45,5 +59,17 @@ fn sin_database_url_no_arranca() {
             Config::from_env(env(&vars)),
             Err(ConfigError::MissingDatabaseUrl)
         );
+    }
+}
+
+#[test]
+fn sin_variables_de_syntroauth_no_arranca() {
+    for k in [
+        "SYNTROAUTH_ISSUER",
+        "SYNTROAUTH_AUDIENCE",
+        "SYNTROAUTH_JWKS_URL",
+    ] {
+        let r = Config::from_env(env(&[("DATABASE_URL", "postgres://x"), (k, "")]));
+        assert_eq!(r, Err(ConfigError::Missing(k)), "{k}");
     }
 }

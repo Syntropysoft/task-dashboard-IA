@@ -21,7 +21,12 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [x] 2. Migraciones con el esquema (`db/migrations/20260913000001_init.sql`, embebidas, corren al
       arrancar; idempotencia y `project_id NOT NULL` en toda tabla verificados por test contra
       Postgres efímero). Sin `DATABASE_URL` el servicio no arranca (2026-09-13).
-- [ ] 3a. JWT de syntroAuth validado contra JWKS (`/api/me`)
+- [x] 3a. JWT de syntroAuth validado contra JWKS: RS256, `iss`/`aud`/`exp`/`sub` obligatorios,
+      cache en memoria con un refresh por kid desconocido cada 30 s, 401 opaco, 503 si el JWKS
+      nunca cargó. `GET /api/me`. 9 tests con un syntroAuth falso (2026-09-13).
+      - [ ] ⛔ Gabriel: confirmar que el syntroAuth de Railway firma **RS256** (`Jwt:PrivateKeyPath`
+        + `PublicKeyPath`; `GET /.well-known/jwks.json` no da 404) y pasar la URL pública y el
+        `iss`/`aud` reales para `SYNTROAUTH_*` en Railway. Con HS256 esta app no valida nada.
 - [ ] 3b. API mínima: projects / members / tokens (PAT) / sequences
 - [ ] 3c. Middleware PAT en `/mcp`
 - [ ] 4. `reservar_id` + test de concurrencia

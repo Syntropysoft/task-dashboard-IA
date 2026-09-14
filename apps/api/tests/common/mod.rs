@@ -1,3 +1,6 @@
+// Cada binario de tests usa una parte de este módulo; lo que no usa uno lo usa otro.
+#![allow(dead_code)]
+
 //! Base de prueba efímera por test: `TEST_DATABASE_URL` apunta a un Postgres con permiso de
 //! CREATE DATABASE (el de `docker-compose.yml`). Sin la variable el test FALLA con mensaje
 //! claro — no se saltea: un gate que se saltea en silencio no es un gate.
@@ -69,3 +72,6 @@ fn replace_db_name(url: &str, name: &str) -> String {
     }
     out
 }
+
+pub mod jwks;
+pub mod state;

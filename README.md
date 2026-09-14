@@ -43,7 +43,9 @@ Correr en local (necesita el Postgres de `docker-compose.yml`; `make db-up` lo l
 make db-up && DATABASE_URL=postgres://td:td@localhost:55432/task_dashboard cargo run -p task-dashboard-api
 ```
 
-`curl localhost:8080/health`. Las migraciones (`db/migrations`) corren solas al arrancar. Los
+`curl localhost:8080/health`. Hacen falta también `SYNTROAUTH_ISSUER`, `SYNTROAUTH_AUDIENCE` y
+`SYNTROAUTH_JWKS_URL` (ver `.env.example`); `GET /api/me` con un `Bearer` de syntroAuth devuelve
+el `sub`. Las migraciones (`db/migrations`) corren solas al arrancar. Los
 tests de base crean una base efímera por test contra `TEST_DATABASE_URL` (la exporta el
 `Makefile`); `make gate` corre todo.
 

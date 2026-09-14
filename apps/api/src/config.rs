@@ -3,17 +3,22 @@
 
 use std::net::{Ipv4Addr, SocketAddr};
 
+use crate::auth::JwtConfig;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     pub addr: SocketAddr,
     /// Obligatoria: sin base no hay servicio. Un `/health` verde sin base mentiría.
     pub database_url: String,
+    /// Obligatorias las tres: sin ellas no hay forma de saber quién llama a `/api`.
+    pub jwt: JwtConfig,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ConfigError {
     InvalidPort(String),
     MissingDatabaseUrl,
+    Missing(&'static str),
 }
 
 impl std::fmt::Display for ConfigError {
@@ -21,6 +26,7 @@ impl std::fmt::Display for ConfigError {
         match self {
             ConfigError::InvalidPort(v) => write!(f, "PORT inválido: {v:?} (se espera 1..=65535)"),
             ConfigError::MissingDatabaseUrl => write!(f, "falta DATABASE_URL (obligatoria)"),
+            ConfigError::Missing(k) => write!(f, "falta {k} (obligatoria)"),
         }
     }
 }
@@ -44,9 +50,19 @@ impl Config {
             Some(u) if !u.trim().is_empty() => u,
             _ => return Err(ConfigError::MissingDatabaseUrl),
         };
+        let required = |k: &'static str| match get(k) {
+            Some(v) if !v.trim().is_empty() => Ok(v.trim().to_string()),
+            _ => Err(ConfigError::Missing(k)),
+        };
+        let jwt = JwtConfig {
+            issuer: required("SYNTROAUTH_ISSUER")?,
+            audience: required("SYNTROAUTH_AUDIENCE")?,
+            jwks_url: required("SYNTROAUTH_JWKS_URL")?,
+        };
         Ok(Config {
             addr: SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)),
             database_url,
+            jwt,
         })
     }
 }

@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+members = ["apps/api"]
+
+[workspace.package]
+edition = "2024"
+license = "UNLICENSED"
+publish = false
+
+# Perfil de release orientado al binario chico: Railway cobra por RAM y la imagen viaja en cada deploy.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# Generar RSA en los tests es aritmética de bignum: en debug tarda segundos por clave. Optimizar
+# solo estos crates deja el resto del árbol con símbolos de debug y compila igual de rápido.
+[profile.dev.package.rsa]
+opt-level = 3
+[profile.dev.package.num-bigint-dig]
+opt-level = 3

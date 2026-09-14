@@ -20,3 +20,39 @@ del global (no commitear sobre `main` si existe `develop`).
 `contexto-agente.md` quedaban ignorados y el chasis se instalaba solo en esta máquina.
 *Verificado 2026-09-13* con `git check-ignore -v` antes de copiar el kit. El `.gitignore` vigente
 ignora solo el estado local (`settings.local.json`, `.continuous-learning.state`).
+
+**El Dockerfile no puede fijar el target de Rust: Railway construye en amd64 y un Mac Apple
+Silicon en arm64.** Con `x86_64-unknown-linux-musl` a mano, el build local falla en el link con
+`cc: unrecognized command-line option '-m64'` (el `cc` de la imagen arm64 no lo conoce). El
+target se deriva de `TARGETARCH` en el `Dockerfile` (amd64 → x86_64, arm64 → aarch64). *Verificado
+2026-09-13:* con el target fijo, `docker build` rompía; derivado, la imagen queda en 8 MB y arranca
+en las dos plataformas. Si algún día hace falta la imagen amd64 desde el Mac: `docker build
+--platform linux/amd64`.
+
+**sqlx 0.9 rechaza SQL dinámico en compilación y exige `'static` en `Executor::execute`.**
+`sqlx::query(&string)` falla con *"dynamic SQL strings should be audited for possible
+injections"* (E0277), y `conn.execute(s.as_str())` con *"`sql` does not live long enough"*
+(E0597) — el trait pide `E: 'q` con `'q` ligado a la conexión. Para DDL con un nombre que
+generamos nosotros (`create database td_test_<uuid>`) la salida es
+`sqlx::query(AssertSqlSafe(string_owned))`: el `String` se mueve adentro y desaparecen las dos
+trabas. *Verificado 2026-09-13* en `apps/api/tests/common/mod.rs`. ❌ NEVER usar
+`AssertSqlSafe` con texto que venga de un usuario: es exactamente la auditoría que desactiva.
+
+**Las migraciones se embeben al compilar (`sqlx::migrate!("../../db/migrations")`).** El
+Dockerfile tiene que copiar `db/` al stage de build o el binario compila con cero migraciones y
+arranca "al día" sobre una base vacía — sin error. *Verificado 2026-09-13:* el `COPY db db` está
+en el Dockerfile y el smoke de la CI arranca la imagen contra un Postgres real.
+
+**`jsonwebtoken` valida `aud`/`iss` solo si el claim está presente.** `Validation::new` exige
+únicamente `exp`; con `set_audience` + `set_issuer` un token **sin** `aud` (o sin `iss`) pasaba
+igual. Hay que declarar `set_required_spec_claims(&["exp", "iss", "aud", "sub"])`. *Cazado por
+test el 2026-09-13* (`apps/api/tests/auth.rs`, caso "sin aud"); lo intuitivo —"configuré la
+audiencia, entonces se exige"— está mal. El crate además se niega a firmar HS256 con una clave
+RSA: para probar el header forjado se reemplaza el primer segmento del token a mano.
+
+**Generar RSA de 2048 bits en tests, en perfil debug, cuesta segundos por clave.** Dos cosas
+juntas lo bajan de ~16 s a <1 s por binario: un depósito por binario (`KEY_STORE`, `OnceLock`
+en `tests/common/jwks.rs`) que genera cada `kid` una sola vez y **fuera del lock**, y
+`[profile.dev.package.rsa] opt-level = 3` (+ `num-bigint-dig`) en el `Cargo.toml` raíz — la
+aritmética de bignum es lo lento, no el resto del árbol. *Verificado 2026-09-14*: `auth` 14,1 s →
+0,48 s; `api` 16,2 s → 0,92 s.

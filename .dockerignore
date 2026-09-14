@@ -1,0 +1,7 @@
+target/
+chasis-kit/
+.git/
+.claude/
+docs/
+scripts/
+*.md

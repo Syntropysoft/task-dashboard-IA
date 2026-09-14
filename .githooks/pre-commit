@@ -1,0 +1,83 @@
+#!/bin/sh
+# chasis-kit v8
+#
+# Pre-commit del chasis — redes independientes; cada una decide por su cuenta si puede correr.
+# Una red que NO corre lo dice: el modo de falla clásico es un gate citado como garantía que
+# nunca corrió (authoring-skills §4.4 — este mismo archivo estuvo commiteado sin bit +x en la
+# implementación de referencia, y git lo salteaba con un hint que nadie lee).
+#
+# Convención de códigos de los gates: 0 = ok · 1 = BLOQUEA · 2 = no pude medir (avisa y pasa —
+# medición fallida ≠ repo roto; pero decilo fuerte y pedí la corrida manual).
+# Bypass de emergencia: git commit --no-verify
+
+repo_root=$(git rev-parse --show-toplevel)
+status=0
+
+# ── 0. rama publicada: no commitear sobre main/master ────────────────────────────────────────
+# Esta red no es del chasis: viene del pre-commit GLOBAL que muchas máquinas tienen en
+# `core.hooksPath` (~/.config/git/hooks). Git NO compone los dos hooksPath — el del repo gana
+# entero — así que instalar el chasis DESACTIVA el global en silencio. Medido el 2026-08-29:
+# echeq-backend, echeq-frontend y echeq-docs llevaban días sin esa guarda y nadie lo notó.
+# Por eso el kit la reimplementa: una regla que se pierde al instalar un gate es peor que no
+# tenerla, porque nadie sabe que se fue.
+# No opina en repos sin flujo de ramas: sin `develop`, commitear en main no es un error.
+if [ "${GIT_ALLOW_MAIN:-}" != "1" ]; then
+  rama=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')
+  case "$rama" in
+    main|master)
+      if git show-ref --verify --quiet refs/heads/develop; then
+        echo "✋ no commitees sobre '${rama}' — este repo tiene develop." >&2
+        echo "   ${rama} es la rama publicada; se mueve por merge, no por commit directo." >&2
+        echo "   git switch develop     (git stash antes, si ya stageaste)" >&2
+        echo "   Hotfix real: GIT_ALLOW_MAIN=1 git commit …" >&2
+        exit 1
+      fi
+      ;;
+  esac
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "⚠️  pre-commit: Node no está disponible — gates del chasis SALTEADOS. Corrélos a mano." >&2
+  exit 0
+fi
+
+# ── 1. chasis-check: .claude/ y hooks (huérfanos, punteros, bit +x) ──────────────────────────
+if [ -f "${repo_root}/scripts/chasis-check.mjs" ] && git diff --cached --name-only | grep -qE '^(\.claude/|\.githooks/|scripts/)'; then
+  node "${repo_root}/scripts/chasis-check.mjs" >&2
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
+    echo "" >&2
+    echo "✋ chasis-check en rojo — commit bloqueado (arriba está el qué)." >&2
+    status=1
+  elif [ "$rc" -ge 2 ]; then
+    echo "⚠️  chasis-check no pudo medir — dejo pasar; corré: node scripts/chasis-check.mjs" >&2
+  fi
+fi
+
+# ── 2. docs-ratchet: ¿este commit EMPEORA la bóveda? (sólo si el repo lo instaló) ────────────
+if [ -f "${repo_root}/scripts/docs-ratchet.mjs" ] && git diff --cached --name-only | grep -qE '\.md$|^(docs/|\.claude/|scripts/)'; then
+  node "${repo_root}/scripts/docs-ratchet.mjs" >&2
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
+    echo "" >&2
+    echo "✋ este commit EMPEORA la bóveda — bloqueado (sólo lo NUEVO bloquea; lo preexistente no)." >&2
+    status=1
+  elif [ "$rc" -ge 2 ]; then
+    echo "⚠️  docs-ratchet no pudo medir — dejo pasar; corré: node scripts/docs-ratchet.mjs" >&2
+  fi
+fi
+
+# ── 3. contexto-check: ¿las reglas del agente afirman cosas que el repo no cumple? ──────────
+if [ -f "${repo_root}/scripts/contexto-check.mjs" ] && git diff --cached --name-only | grep -qE '^(\.cursor/|\.claude/|package\.json|scripts/)'; then
+  node "${repo_root}/scripts/contexto-check.mjs" >&2
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
+    echo "" >&2
+    echo "✋ contexto-check en rojo — una regla del agente miente sobre el repo. Commit bloqueado." >&2
+    status=1
+  elif [ "$rc" -ge 2 ]; then
+    echo "⚠️  contexto-check no pudo medir — dejo pasar; corré: node scripts/contexto-check.mjs" >&2
+  fi
+fi
+
+exit $status

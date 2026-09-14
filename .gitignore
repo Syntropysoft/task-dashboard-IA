@@ -1,0 +1,25 @@
+## Rust
+target/
+**/*.rs.bk
+
+## Config local (usar .env.example como plantilla). Los tokens de los devs NUNCA entran al repo.
+.env
+.env.*
+!.env.example
+
+## Claude Code: el chasis (rules, skills, commands, templates y los genéricos .md sueltos en la
+## raíz de .claude/) es del equipo y se versiona. Solo queda afuera el estado local de cada dev.
+## ❌ NEVER una whitelist `.claude/*` + `!.claude/rules/`: es por directorio y se traga los .md
+## sueltos de la raíz (authoring-skills.md, proof-of-bug.md…) — chasis-kit lo documenta y lo
+## medimos acá el 2026-09-13 con `git check-ignore -v`.
+.claude/settings.local.json
+.claude/.continuous-learning.state
+
+## chasis-kit: clon del kit de instalación, vive al lado del repo pero no es parte de él.
+chasis-kit/
+
+## OS / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

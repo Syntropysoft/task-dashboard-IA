@@ -42,9 +42,8 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       consumidor lo referencia. Antes del paso 2.
 - [ ] **Acceso del indexador al repo de cada proyecto** (token de GitHub por proyecto vs GitHub
       App). Paso 2.
-- [ ] El clon `source-2/syntropysoft/syntroAuth` está en `main` al 2026-08-14; `motor/syntroAuth`
-      tiene commits del 08-29 que ese main no tiene. Sincronizar antes de apoyarse en el contrato
-      del token.
+- [x] **Referencia de syntroAuth: la rama `develop`** — ahí está todo integrado (2026-09-13).
+      Para leer su contrato, `git switch develop` en el clon de `source-2/syntropysoft/syntroAuth`.
 
 ## Decisiones cerradas el 2026-09-13 (segunda ronda)
 

@@ -23,18 +23,16 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       - [x] PR #1 y #2 mergeados por Gabriel (2026-09-14). Verificado en producción: `/health`
         200 (1,4 s despertando), log `base conectada y migraciones al día`, app sleeping
         funcionando (duerme a los ~8 min, despierta con la primera request).
-      - [ ] ⛔ Gabriel: URL real de syntroAuth para `SYNTROAUTH_JWKS_URL` (hoy es un placeholder:
-        `/api` da 503 hasta cambiarla). No aparece ningún proyecto syntroAuth en esta cuenta de
-        Railway (`list-projects`: stellar-wisdom, enthusiastic-friendship, examples-patterns).
+      - [x] `SYNTROAUTH_JWKS_URL` real cargada (2026-09-14). syntroAuth vive en otra cuenta de Railway.
 - [x] 2. Migraciones con el esquema (`db/migrations/20260913000001_init.sql`, embebidas, corren al
       arrancar; idempotencia y `project_id NOT NULL` en toda tabla verificados por test contra
       Postgres efímero). Sin `DATABASE_URL` el servicio no arranca (2026-09-13).
 - [x] 3a. JWT de syntroAuth validado contra JWKS: RS256, `iss`/`aud`/`exp`/`sub` obligatorios,
       cache en memoria con un refresh por kid desconocido cada 30 s, 401 opaco, 503 si el JWKS
       nunca cargó. `GET /api/me`. 9 tests con un syntroAuth falso (2026-09-13).
-      - [ ] ⛔ Gabriel: confirmar que el syntroAuth de Railway firma **RS256** (`Jwt:PrivateKeyPath`
-        + `PublicKeyPath`; `GET /.well-known/jwks.json` no da 404) y pasar la URL pública y el
-        `iss`/`aud` reales para `SYNTROAUTH_*` en Railway. Con HS256 esta app no valida nada.
+      - [x] syntroAuth de producción: `https://syntroauth-production.up.railway.app`, firma RS256
+        (`kid SyntroAuth-1`), `iss`/`aud` = `SyntroAuth`. Variables cargadas en Railway el
+        2026-09-14; `/api/me` con token basura → 401 (JWKS cargado).
 - [x] 3b. API mínima con JWT: `GET/POST /api/projects`, `POST …/members` (owner), `GET/POST
       …/tokens` (PAT `tdp_…`, secreto una vez, sha256 en base), `DELETE …/tokens/{id}` (propio u
       owner; exige `/api/auth/validate` de syntroAuth, fail-closed), `PUT …/sequences/{prefix}`
@@ -75,6 +73,13 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [ ] 10. Firestore `backlog-mnc` apagado
 
 ## Decisiones abiertas
+
+- [ ] ⛔ **syntroAuth (repo aparte)**: en producción `GET /api/tenants/by-name/default` falla con
+      `42P01: relation "syntro_auth.tenants" does not exist` — la base no tiene el schema
+      `syntro_auth` (¿rama `feature/rename-schema-syntro-auth` sin mergear, o migraciones sin
+      correr?). El login exige password cifrada con `/api/auth/security/public-key`
+      (`DECRYPTION_FAILED` si va en claro), como hace su frontend. Medido 2026-09-14. Es de
+      syntroAuth, no de este repo; condiciona el ítem 9.
 
 - [ ] `hipótesis`: tras un app sleeping / redeploy la sesión MCP en memoria se pierde, el servidor
       responde 404 y **el cliente de Claude Code re-inicializa solo** (la spec MCP lo exige al

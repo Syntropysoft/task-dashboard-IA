@@ -20,3 +20,11 @@ del global (no commitear sobre `main` si existe `develop`).
 `contexto-agente.md` quedaban ignorados y el chasis se instalaba solo en esta máquina.
 *Verificado 2026-09-13* con `git check-ignore -v` antes de copiar el kit. El `.gitignore` vigente
 ignora solo el estado local (`settings.local.json`, `.continuous-learning.state`).
+
+**El Dockerfile no puede fijar el target de Rust: Railway construye en amd64 y un Mac Apple
+Silicon en arm64.** Con `x86_64-unknown-linux-musl` a mano, el build local falla en el link con
+`cc: unrecognized command-line option '-m64'` (el `cc` de la imagen arm64 no lo conoce). El
+target se deriva de `TARGETARCH` en el `Dockerfile` (amd64 → x86_64, arm64 → aarch64). *Verificado
+2026-09-13:* con el target fijo, `docker build` rompía; derivado, la imagen queda en 8 MB y arranca
+en las dos plataformas. Si algún día hace falta la imagen amd64 desde el Mac: `docker build
+--platform linux/amd64`.

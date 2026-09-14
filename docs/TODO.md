@@ -52,7 +52,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       es idempotente; `force` pisa, loguea ambos y devuelve `previous_holder`; `NO_ES_TUYA` (403),
       `NO_TOMADA` (409). Test: 20 tomas simultáneas de una ficha nueva → exactamente una gana;
       aislamiento por proyecto (2026-09-14).
-- [ ] 6. `sugerir`
+- [x] 6. `sugerir` (`suggestions.rs` + `POST /mcp/sugerir`, `GET /mcp/sugerencias` con PAT): inserta
+      con el proyecto y el autor del PAT, devuelve `{id}`; lista las abiertas del proyecto, más
+      viejas primero; texto vacío o > 4000 chars (contexto > 500) → 400 sin rastro (2026-09-14).
 - [ ] 7. MCP sobre `/mcp` con las 5 herramientas, probado desde Claude Code
 - [ ] 8. Seed del contador `MVC` de Convertix con el máximo ID real del repo
 - [ ] 9. ⛔ Andrés: registro en syntroAuth, member, PAT, alta del MCP + regla en el `CLAUDE.md` de Convertix

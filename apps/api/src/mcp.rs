@@ -14,6 +14,7 @@ use crate::{
     auth::pat::{self, PatUser},
     claims, ids,
     state::AppState,
+    suggestions,
 };
 
 #[derive(Serialize)]
@@ -29,6 +30,8 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route("/tomar_ficha", post(tomar_ficha))
         .route("/liberar_ficha", post(liberar_ficha))
         .route("/fichas_tomadas", get(fichas_tomadas))
+        .route("/sugerir", post(sugerir))
+        .route("/sugerencias", get(sugerencias))
         .route_layer(middleware::from_fn_with_state(state, pat::require_pat))
 }
 
@@ -121,4 +124,39 @@ async fn fichas_tomadas(
     PatUser(ctx): PatUser,
 ) -> Result<Json<Vec<claims::Claim>>, ApiError> {
     Ok(Json(claims::list(&st.pool, ctx.project_id).await?))
+}
+
+#[derive(Deserialize)]
+pub struct Sugerir {
+    pub texto: String,
+    #[serde(default)]
+    pub contexto: Option<String>,
+}
+
+async fn sugerir(
+    axum::extract::State(st): axum::extract::State<AppState>,
+    PatUser(ctx): PatUser,
+    Json(body): Json<Sugerir>,
+) -> Result<(axum::http::StatusCode, Json<serde_json::Value>), ApiError> {
+    let id = suggestions::create(
+        &st.pool,
+        ctx.project_id,
+        &ctx.user_sub,
+        &body.texto,
+        body.contexto.as_deref(),
+    )
+    .await?;
+    Ok((
+        axum::http::StatusCode::CREATED,
+        Json(serde_json::json!({ "id": id })),
+    ))
+}
+
+async fn sugerencias(
+    axum::extract::State(st): axum::extract::State<AppState>,
+    PatUser(ctx): PatUser,
+) -> Result<Json<Vec<suggestions::Suggestion>>, ApiError> {
+    Ok(Json(
+        suggestions::list_open(&st.pool, ctx.project_id).await?,
+    ))
 }

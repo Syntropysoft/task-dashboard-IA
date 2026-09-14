@@ -7,6 +7,7 @@ pub mod api;
 pub mod auth;
 pub mod config;
 pub mod db;
+pub mod mcp;
 pub mod state;
 
 use auth::AuthUser;
@@ -32,6 +33,7 @@ pub fn app(state: AppState) -> Router {
         .route("/health", get(health))
         .route("/api/me", get(me))
         .nest("/api", api::router())
+        .nest("/mcp", mcp::router(state.clone()))
         .with_state(state)
 }
 

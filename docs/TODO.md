@@ -39,7 +39,10 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       owner; exige `/api/auth/validate` de syntroAuth, fail-closed), `PUT …/sequences/{prefix}`
       (owner; **nunca baja** el contador → 409). No miembro = 404. 6 tests contra Postgres real
       (2026-09-13).
-- [ ] 3c. Middleware PAT en `/mcp`
+- [x] 3c. Middleware PAT en `/mcp` (`auth/pat.rs`): `Bearer tdp_…` → sha256 → (proyecto, usuario)
+      en las extensions; inexistente / revocado / prefijo ajeno / JWT → el mismo 401;
+      `last_used_at` como mucho una vez por minuto. Sonda `GET /mcp/whoami` hasta que llegue
+      rmcp (ítem 7). 4 tests contra Postgres real, con PATs emitidos por la API (2026-09-14).
 - [ ] 4. `reservar_id` + test de concurrencia
 - [ ] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas`
 - [ ] 6. `sugerir`

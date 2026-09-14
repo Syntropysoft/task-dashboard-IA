@@ -108,6 +108,46 @@ impl Validator {
         &self.cfg
     }
 
+    /// `GET /api/auth/validate` de syntroAuth: firma + expiración + denylist + binding
+    /// (`SSO_SUITE_GUIDE.md` §1.3). Se llama antes de operaciones destructivas. Fail-closed:
+    /// 401 de syntroAuth → `Unauthorized`; cualquier otra cosa (caído, 5xx) → `JwksUnavailable`
+    /// (503): sin confirmación no se destruye nada.
+    pub async fn validate_online(&self, token: &str) -> Result<(), AuthError> {
+        let url = self.validate_url();
+        let res = self
+            .http
+            .get(&url)
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|e| {
+                warn!(error = %e, url, "syntroAuth /validate inaccesible");
+                AuthError::JwksUnavailable
+            })?;
+        match res.status().as_u16() {
+            200 => Ok(()),
+            401 | 403 => Err(AuthError::Unauthorized("syntroAuth rechazó la sesión")),
+            other => {
+                warn!(
+                    status = other,
+                    "syntroAuth /validate respondió algo inesperado"
+                );
+                Err(AuthError::JwksUnavailable)
+            }
+        }
+    }
+
+    /// La base de syntroAuth se deriva del JWKS: `…/.well-known/jwks.json` → `…/api/auth/validate`.
+    fn validate_url(&self) -> String {
+        let base = self
+            .cfg
+            .jwks_url
+            .strip_suffix("/.well-known/jwks.json")
+            .unwrap_or(&self.cfg.jwks_url)
+            .trim_end_matches('/');
+        format!("{base}/api/auth/validate")
+    }
+
     pub fn key_count(&self) -> usize {
         self.keys.read().expect("keys lock").len()
     }

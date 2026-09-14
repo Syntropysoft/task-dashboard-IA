@@ -45,7 +45,10 @@ make db-up && DATABASE_URL=postgres://td:td@localhost:55432/task_dashboard cargo
 
 `curl localhost:8080/health`. Hacen falta también `SYNTROAUTH_ISSUER`, `SYNTROAUTH_AUDIENCE` y
 `SYNTROAUTH_JWKS_URL` (ver `.env.example`); `GET /api/me` con un `Bearer` de syntroAuth devuelve
-el `sub`. Las migraciones (`db/migrations`) corren solas al arrancar. Los
+el `sub`. Con ese JWT, la API mínima: `POST /api/projects`, `POST /api/projects/{slug}/members`,
+`POST /api/projects/{slug}/tokens` (devuelve el PAT `tdp_…` una sola vez),
+`PUT /api/projects/{slug}/sequences/{prefix}` (seed). Detalle en `docs/PLAN-PASO-1.md`.
+Las migraciones (`db/migrations`) corren solas al arrancar. Los
 tests de base crean una base efímera por test contra `TEST_DATABASE_URL` (la exporta el
 `Makefile`); `make gate` corre todo.
 

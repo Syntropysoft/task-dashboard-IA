@@ -20,6 +20,12 @@ sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio",
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 jsonwebtoken = { version = "11", features = ["rust_crypto"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-webpki-roots", "json"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+rand = "0.8"
+hex = "0.4"
+base64 = "0.22"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
@@ -27,4 +33,3 @@ http-body-util = "0.1"
 uuid = { version = "1", features = ["v4"] }
 rsa = { version = "0.9", features = ["pem"] }
 rand = "0.8"
-base64 = "0.22"

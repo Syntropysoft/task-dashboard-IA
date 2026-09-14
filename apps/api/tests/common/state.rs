@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use task_dashboard_api::auth::{JwtConfig, Validator};
 use task_dashboard_api::state::AppState;
@@ -21,4 +22,11 @@ pub fn state_sin_auth() -> AppState {
         audience: "SyntroAuth".into(),
         jwks_url: "http://127.0.0.1:1/jwks".into(), // puerto cerrado: nunca responde
     })
+}
+
+pub fn state_with_pool(jwt: JwtConfig, pool: PgPool) -> AppState {
+    AppState {
+        pool,
+        auth: Arc::new(Validator::new(jwt)),
+    }
 }

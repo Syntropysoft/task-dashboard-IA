@@ -101,11 +101,20 @@ impl Default for TokenSpec {
     }
 }
 
+/// Qué responde `/api/auth/validate` del syntroAuth falso.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ValidateMode {
+    Ok,
+    Reject,
+    Down,
+}
+
 /// Servidor JWKS efímero. `keys` es mutable para simular rotación y caída entre requests.
 pub struct FakeJwks {
     pub url: String,
     keys: Arc<RwLock<Vec<Value>>>,
     pub hits: Arc<RwLock<usize>>,
+    validate: Arc<RwLock<ValidateMode>>,
 }
 
 impl FakeJwks {
@@ -114,17 +123,38 @@ impl FakeJwks {
             signers.iter().map(|s| s.jwk.clone()).collect::<Vec<_>>(),
         ));
         let hits = Arc::new(RwLock::new(0usize));
-        let (k, h) = (keys.clone(), hits.clone());
-        let app = Router::new().route(
-            "/.well-known/jwks.json",
-            get(move || {
-                let (k, h) = (k.clone(), h.clone());
-                async move {
-                    *h.write().unwrap() += 1;
-                    axum::Json(json!({ "keys": *k.read().unwrap() }))
-                }
-            }),
-        );
+        let validate = Arc::new(RwLock::new(ValidateMode::Ok));
+        let (k, h, v) = (keys.clone(), hits.clone(), validate.clone());
+        let app = Router::new()
+            .route(
+                "/.well-known/jwks.json",
+                get(move || {
+                    let (k, h) = (k.clone(), h.clone());
+                    async move {
+                        *h.write().unwrap() += 1;
+                        axum::Json(json!({ "keys": *k.read().unwrap() }))
+                    }
+                }),
+            )
+            .route(
+                "/api/auth/validate",
+                get(move |headers: axum::http::HeaderMap| {
+                    let v = v.clone();
+                    async move {
+                        let has_bearer = headers
+                            .get("authorization")
+                            .and_then(|h| h.to_str().ok())
+                            .is_some_and(|h| h.starts_with("Bearer "));
+                        match *v.read().unwrap() {
+                            ValidateMode::Ok if has_bearer => axum::http::StatusCode::OK,
+                            ValidateMode::Ok | ValidateMode::Reject => {
+                                axum::http::StatusCode::UNAUTHORIZED
+                            }
+                            ValidateMode::Down => axum::http::StatusCode::BAD_GATEWAY,
+                        }
+                    }
+                }),
+            );
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
@@ -133,7 +163,12 @@ impl FakeJwks {
             url: format!("http://{addr}/.well-known/jwks.json"),
             keys,
             hits,
+            validate,
         }
+    }
+
+    pub fn set_validate(&self, mode: ValidateMode) {
+        *self.validate.write().unwrap() = mode;
     }
 
     pub fn rotate_to(&self, signer: &Signer) {

@@ -3,6 +3,7 @@
 use axum::{Json, Router, routing::get};
 use serde::Serialize;
 
+pub mod api;
 pub mod auth;
 pub mod config;
 pub mod db;
@@ -30,6 +31,7 @@ pub fn app(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/api/me", get(me))
+        .nest("/api", api::router())
         .with_state(state)
 }
 
@@ -42,10 +44,10 @@ async fn health() -> Json<Health> {
 
 /// Prueba de vida de la identidad: devuelve lo que el JWT dice que sos. Sin autorización
 /// todavía — cualquier usuario válido de la suite puede llamarlo.
-async fn me(AuthUser(claims): AuthUser) -> Json<Me> {
+async fn me(user: AuthUser) -> Json<Me> {
     Json(Me {
-        sub: claims.sub,
-        email: claims.email,
-        tenant_id: claims.tenant_id,
+        sub: user.claims.sub,
+        email: user.claims.email,
+        tenant_id: user.claims.tenant_id,
     })
 }

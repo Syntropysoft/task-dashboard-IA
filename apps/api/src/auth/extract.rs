@@ -12,7 +12,11 @@ use super::{AuthError, Claims};
 use crate::state::AppState;
 
 #[derive(Debug, Clone)]
-pub struct AuthUser(pub Claims);
+pub struct AuthUser {
+    pub claims: Claims,
+    /// El JWT crudo, para reenviarlo a `/api/auth/validate` antes de una operación destructiva.
+    pub token: String,
+}
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
@@ -46,6 +50,10 @@ impl FromRequestParts<AppState> for AuthUser {
             .map(str::trim)
             .filter(|t| !t.is_empty())
             .ok_or(AuthError::Unauthorized("Authorization no es Bearer"))?;
-        state.auth.validate(token).await.map(AuthUser)
+        let claims = state.auth.validate(token).await?;
+        Ok(AuthUser {
+            claims,
+            token: token.to_string(),
+        })
     }
 }

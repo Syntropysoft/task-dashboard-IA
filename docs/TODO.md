@@ -34,7 +34,11 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       - [ ] ⛔ Gabriel: confirmar que el syntroAuth de Railway firma **RS256** (`Jwt:PrivateKeyPath`
         + `PublicKeyPath`; `GET /.well-known/jwks.json` no da 404) y pasar la URL pública y el
         `iss`/`aud` reales para `SYNTROAUTH_*` en Railway. Con HS256 esta app no valida nada.
-- [ ] 3b. API mínima: projects / members / tokens (PAT) / sequences
+- [x] 3b. API mínima con JWT: `GET/POST /api/projects`, `POST …/members` (owner), `GET/POST
+      …/tokens` (PAT `tdp_…`, secreto una vez, sha256 en base), `DELETE …/tokens/{id}` (propio u
+      owner; exige `/api/auth/validate` de syntroAuth, fail-closed), `PUT …/sequences/{prefix}`
+      (owner; **nunca baja** el contador → 409). No miembro = 404. 6 tests contra Postgres real
+      (2026-09-13).
 - [ ] 3c. Middleware PAT en `/mcp`
 - [ ] 4. `reservar_id` + test de concurrencia
 - [ ] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas`
@@ -76,6 +80,14 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
   no lo usa: reserva/claims/PAT viven en Postgres con transacciones; el JWKS se cachea en memoria
   (un solo proceso). Se reabre solo si aparecen réplicas (rate limit o cache de revocación
   compartida). Compartir el de syntroAuth mezclaría estado de dos servicios.
+
+## Operación
+
+- [ ] ⛔ Gabriel: **cerrar el proxy TCP público de Postgres** (`altaria.proxy.rlwy.net:27317`)
+      cuando todo esté desplegado y no haga falta entrar desde local. Decidido 2026-09-13: la
+      pública es solo para desarrollo/pruebas.
+- [ ] Sugerencia: los tests de auth/api generan una clave RSA de 2048 bits por test (~16 s en
+      total). Cachear la clave en un `OnceLock` del helper bajaría el gate a segundos.
 
 ## Chasis (pendientes de la instalación)
 

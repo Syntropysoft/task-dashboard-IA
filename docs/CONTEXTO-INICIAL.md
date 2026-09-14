@@ -54,6 +54,7 @@ Las escrituras de estado de una ficha (cerrarla, moverla) siguen yendo por commi
 ## Decisiones abiertas
 
 - ¿Andrés está de acuerdo y lo va a usar? (Si uno no lo usa, se repite lo de Firestore.)
+  → 2026-09-13: se le muestra con el MCP andando. Seguimiento en `docs/TODO.md`.
 - ~~Hosting~~ **Decidido 2026-09-13: infra propia en Railway, con el mínimo de piezas facturables.**
   Queda fuera del monorepo de Convertix (otra cosa, sin multi-tenant, sin sus invariantes) y del
   crédito de AWS del piloto. Forma:
@@ -68,7 +69,9 @@ Las escrituras de estado de una ficha (cerrarla, moverla) siguen yendo por commi
     de un parámetro.
   - Lenguaje: **Rust** (recomendado; `rmcp` + `axum` + `sqlx`) o .NET Native AOT. Ver
     `docs/PLAN-PASO-1.md`.
-- ¿Cómo lee el repo? Clon local, API de GitHub, o webhook de push.
+- ¿Cómo lee el repo? Clon local, API de GitHub, o webhook de push. → Webhook (ver arriba); qué
+  rama lee, abierto en `docs/TODO.md`.
+- Ramas de este repo → 2026-09-13: `develop` para trabajar, `main` deploya a Railway al mergear.
 - Prioridad frente a lo urgente de Convertix: vulnerabilidades de dependencias (1 crítica en `next`,
   ficha a abrir como MVC-0406), `MVC-0393` (versión de Graph API, vence 2026-09-24) y el medio de pago
   de Meta (antes del 2026-09-30).

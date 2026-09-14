@@ -21,6 +21,8 @@ Sin código todavía. Está el contexto, el plan del paso 1 y el chasis de traba
 
 ## Forma (decidida, ver contexto)
 
+Ramas: `develop` para trabajar, `main` es lo desplegado (el merge deploya en Railway).
+
 Un solo servicio en **Railway** (backend + MCP por HTTP + indexador + frontend en un proceso) y un
 **Postgres** gestionado (1 vCPU / 1 GB). Lenguaje: Rust. Fecha dura del paso 1: **2026-09-30**.
 

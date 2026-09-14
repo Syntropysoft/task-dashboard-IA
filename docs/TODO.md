@@ -26,13 +26,18 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 
 ## Decisiones abiertas
 
-- [ ] **¿Andrés lo va a usar?** Sin los dos, se repite lo de Firestore. Es el riesgo #1.
-- [ ] **¿Firestore vence de verdad el 2026-09-30 o es extensible?** Cambia la urgencia de todo.
+- [ ] ⛔ **Andrés** todavía no conoce la idea. Decidido 2026-09-13: se le muestra con el MCP
+      andando (ítem 7), no antes. Hasta entonces, el ítem 9 está bloqueado por él.
+- [x] **Firestore es extensible.** Decidido 2026-09-13: se extienden las reglas de `backlog-mnc`
+      un mes como red; el objetivo sigue siendo el 2026-09-30. — [ ] ⛔ hacer la extensión en la
+      consola de Firebase (acción de Gabriel, fuera de este repo).
 - [ ] **Lectura del repo (paso 2): ¿solo `main` o por rama?** Decide si `proxima_ficha()` puede
       ofrecer una ficha ya cerrada en una feature branch.
 - [ ] **Contrato del frontmatter de Convertix** (`prioridad-iniciativa`, prioridad de ficha,
-      "Depende de", `⛔ Trello`, `tema`): este proyecto lo consume, el gate de Convertix lo cuida.
-      Hay que escribirlo antes del paso 2.
+      "Depende de", `⛔ Trello`, `tema`). Decidido 2026-09-13: se escribe **acá**, en
+      `docs/CONTRATO-FRONTMATTER.md`, como spec del parser del indexador — el indexador lo valida,
+      así el doc no puede desincronizarse en silencio del código que lo lee. Convertix lo
+      referencia. Antes del paso 2.
 
 ## Chasis (pendientes de la instalación)
 
@@ -40,6 +45,11 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       la dependencia de los ítems 1–3 y marcó el modelo `SIN DECLARAR` (2026-09-13).
 - [x] `docs-ratchet` visto dar ROJO con `docs/SUELTO.md` huérfano inyectado (2026-09-13).
 - [ ] ⛔ Andrés: `make hooks` en su clon y confirmar que el pre-commit le corre.
+
+## Flujo de ramas de este repo (decidido 2026-09-13)
+
+`develop` para trabajar y probar en local; `main` es lo desplegado: el merge a `main` deploya en
+Railway. El pre-commit bloquea commits directos sobre `main` mientras exista `develop`.
 
 ## Pasos siguientes (no planificados todavía)
 

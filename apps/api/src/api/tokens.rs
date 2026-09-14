@@ -1,5 +1,7 @@
-//! PAT para el MCP: un usuario en un proyecto. El secreto se devuelve UNA vez; en la base
-//! queda solo su sha256. Revocar es destructivo → `/api/auth/validate` en syntroAuth antes.
+//! PAT para el MCP: un usuario en un proyecto. Formato `tdp_<key_id>.<secret>` (decisión
+//! 2026-09-14): el `key_id` es el id de la fila y viaja en claro — sirve para buscar, loguear y
+//! revocar sin conocer el secreto; el secreto se devuelve UNA vez y en la base queda solo su
+//! sha256. Revocar es destructivo → `/api/auth/validate` en syntroAuth antes.
 
 use axum::{
     Json,
@@ -21,16 +23,29 @@ use crate::{auth::AuthUser, state::AppState};
 
 pub const PREFIX: &str = "tdp_";
 
-/// 32 bytes de entropía, base64url sin padding, con prefijo reconocible para que un secret
-/// scanner lo detecte si alguien lo commitea.
+/// 32 bytes de entropía, base64url sin padding. Solo la parte secreta.
 pub fn generate_secret() -> String {
     let mut bytes = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut bytes);
     use base64::Engine;
-    format!(
-        "{PREFIX}{}",
-        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
-    )
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+/// `tdp_<key_id>.<secret>`: un solo string para `Authorization: Bearer`, con prefijo reconocible
+/// para que un secret scanner lo detecte si alguien lo commitea.
+pub fn format_token(key_id: Uuid, secret: &str) -> String {
+    format!("{PREFIX}{}.{secret}", key_id.simple())
+}
+
+/// Parte un bearer en (key_id, secret). Cualquier forma que no sea la esperada es `None`:
+/// el llamador responde 401 sin decir qué estaba mal.
+pub fn parse_token(bearer: &str) -> Option<(Uuid, &str)> {
+    let rest = bearer.strip_prefix(PREFIX)?;
+    let (id, secret) = rest.split_once('.')?;
+    if secret.is_empty() {
+        return None;
+    }
+    Some((Uuid::parse_str(id).ok()?, secret))
 }
 
 pub fn hash(secret: &str) -> String {
@@ -45,8 +60,12 @@ pub struct CreateToken {
 #[derive(Serialize)]
 pub struct IssuedToken {
     pub id: Uuid,
+    /// El mismo id, tal como viaja dentro del token. Público: se puede loguear.
+    pub key_id: String,
     pub name: String,
     /// Solo acá. No vuelve a mostrarse ni a guardarse.
+    pub secret: String,
+    /// `tdp_<key_id>.<secret>`, listo para `Authorization: Bearer`.
     pub token: String,
 }
 
@@ -71,8 +90,8 @@ pub async fn create(
         return Err(ApiError::Validation("NOMBRE_VACIO"));
     }
     let secret = generate_secret();
-    let id: (Uuid,) = sqlx::query_as(
-        "insert into access_tokens (project_id, user_sub, name, token_hash) values ($1, $2, $3, $4) \
+    let (id,): (Uuid,) = sqlx::query_as(
+        "insert into access_tokens (project_id, user_sub, name, secret_hash) values ($1, $2, $3, $4) \
          returning id",
     )
     .bind(m.project_id)
@@ -84,9 +103,11 @@ pub async fn create(
     Ok((
         StatusCode::CREATED,
         Json(IssuedToken {
-            id: id.0,
+            id,
+            key_id: id.simple().to_string(),
             name: name.to_string(),
-            token: secret,
+            token: format_token(id, &secret),
+            secret,
         }),
     ))
 }

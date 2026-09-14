@@ -29,6 +29,7 @@ base64 = "0.22"
 rmcp = { version = "3", features = ["server", "transport-streamable-http-server", "macros", "schemars"] }
 schemars = { version = "1", features = ["chrono04"] }
 http = "1"
+subtle = "2"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

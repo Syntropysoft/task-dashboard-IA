@@ -74,9 +74,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       cliente). Validar en el ítem 9 con Claude Code real; si no lo hace, alternativa: sesiones
       en Postgres (`session_store` de rmcp) o apagar el sleeping. `TODO: validar` en
       `apps/api/src/mcp.rs`.
-- [ ] **Formato del PAT: `tdp_<key_id>.<secret>`** (key-id en claro para buscar/loguear/revocar,
-      secret hasheado y comparado en tiempo constante) — propuesto 2026-09-14 a pedido de Gabriel,
-      pendiente de OK. Toca 3b/3c y sus tests.
+- [x] **Formato del PAT: `tdp_<key_id>.<secret>`** — decidido e implementado 2026-09-14: key_id =
+      id de la fila (en claro: buscar, loguear, revocar), secret hasheado y comparado en tiempo
+      constante. Migración `20260914000001_pat_key_id.sql` (renombra `token_hash` → `secret_hash`).
 
 - [ ] ⛔ **Andrés** todavía no conoce la idea. Decidido 2026-09-13: se le muestra con el MCP
       andando (ítem 7), no antes. Hasta entonces, el ítem 9 está bloqueado por él.

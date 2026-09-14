@@ -8,4 +8,6 @@ use crate::auth::Validator;
 pub struct AppState {
     pub pool: PgPool,
     pub auth: Arc<Validator>,
+    /// Hosts que el servidor MCP acepta en `Host:` (rmcp rechaza el resto: anti DNS-rebinding).
+    pub mcp_allowed_hosts: Vec<String>,
 }

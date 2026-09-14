@@ -21,7 +21,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Err(e) = auth.refresh().await {
         warn!(error = %e, "arranco sin JWKS; /api dará 503 hasta que syntroAuth responda");
     }
-    let state = AppState { pool, auth };
+    let state = AppState {
+        pool,
+        auth,
+        mcp_allowed_hosts: config.mcp_allowed_hosts.clone(),
+    };
     let listener = tokio::net::TcpListener::bind(config.addr).await?;
     info!(addr = %config.addr, "task-dashboard-api escuchando");
 

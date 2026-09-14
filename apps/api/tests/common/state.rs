@@ -13,8 +13,11 @@ pub fn state_with(jwt: JwtConfig) -> AppState {
             .connect_lazy("postgres://nadie:nada@127.0.0.1:1/no_se_usa")
             .expect("pool lazy"),
         auth: Arc::new(Validator::new(jwt)),
+        mcp_allowed_hosts: LOOPBACK.iter().map(|h| h.to_string()).collect(),
     }
 }
+
+const LOOPBACK: [&str; 3] = ["localhost", "127.0.0.1", "[::1]"];
 
 pub fn state_sin_auth() -> AppState {
     state_with(JwtConfig {
@@ -28,5 +31,6 @@ pub fn state_with_pool(jwt: JwtConfig, pool: PgPool) -> AppState {
     AppState {
         pool,
         auth: Arc::new(Validator::new(jwt)),
+        mcp_allowed_hosts: LOOPBACK.iter().map(|h| h.to_string()).collect(),
     }
 }

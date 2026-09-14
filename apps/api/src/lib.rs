@@ -10,6 +10,7 @@ pub mod config;
 pub mod db;
 pub mod ids;
 pub mod mcp;
+pub mod mcp_server;
 pub mod state;
 pub mod suggestions;
 

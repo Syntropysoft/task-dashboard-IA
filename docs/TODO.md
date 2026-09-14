@@ -55,12 +55,28 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [x] 6. `sugerir` (`suggestions.rs` + `POST /mcp/sugerir`, `GET /mcp/sugerencias` con PAT): inserta
       con el proyecto y el autor del PAT, devuelve `{id}`; lista las abiertas del proyecto, más
       viejas primero; texto vacío o > 4000 chars (contexto > 500) → 400 sin rastro (2026-09-14).
-- [ ] 7. MCP sobre `/mcp` con las 5 herramientas, probado desde Claude Code
+- [x] 7. MCP real (rmcp 3.3, Streamable HTTP) en `POST /mcp` detrás del PAT, con las 5 herramientas
+      y las reglas del contrato en `instructions`. Sesiones en memoria (`LocalSessionManager`):
+      el modo sin sesión de rmcp solo sirve a clientes del protocolo 2026-07-28, y Claude Code
+      hace handshake. Errores de dominio como `is_error` con `CODIGO: explicación`. 5 tests
+      end-to-end por socket real: handshake, tools/list, flujo completo, errores, 401, host
+      ajeno, sesión perdida → 404 (2026-09-14).
+      - [ ] ⛔ Probar desde Claude Code real contra Railway (ítem 9): `claude mcp add --transport
+        http task-dashboard <url>/mcp --header "Authorization: Bearer tdp_…"`.
 - [ ] 8. Seed del contador `MVC` de Convertix con el máximo ID real del repo
 - [ ] 9. ⛔ Andrés: registro en syntroAuth, member, PAT, alta del MCP + regla en el `CLAUDE.md` de Convertix
 - [ ] 10. Firestore `backlog-mnc` apagado
 
 ## Decisiones abiertas
+
+- [ ] `hipótesis`: tras un app sleeping / redeploy la sesión MCP en memoria se pierde, el servidor
+      responde 404 y **el cliente de Claude Code re-inicializa solo** (la spec MCP lo exige al
+      cliente). Validar en el ítem 9 con Claude Code real; si no lo hace, alternativa: sesiones
+      en Postgres (`session_store` de rmcp) o apagar el sleeping. `TODO: validar` en
+      `apps/api/src/mcp.rs`.
+- [ ] **Formato del PAT: `tdp_<key_id>.<secret>`** (key-id en claro para buscar/loguear/revocar,
+      secret hasheado y comparado en tiempo constante) — propuesto 2026-09-14 a pedido de Gabriel,
+      pendiente de OK. Toca 3b/3c y sus tests.
 
 - [ ] ⛔ **Andrés** todavía no conoce la idea. Decidido 2026-09-13: se le muestra con el MCP
       andando (ítem 7), no antes. Hasta entonces, el ítem 9 está bloqueado por él.

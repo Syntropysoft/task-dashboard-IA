@@ -7,7 +7,7 @@ use sqlx::PgPool;
 use tracing::warn;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow, schemars::JsonSchema)]
 pub struct Claim {
     pub ficha_id: String,
     pub held_by: String,
@@ -15,7 +15,7 @@ pub struct Claim {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct Taken {
     pub ficha_id: String,
     pub held_by: String,

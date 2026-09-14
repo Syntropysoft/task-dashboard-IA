@@ -36,9 +36,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 
 ## Chasis (pendientes de la instalación)
 
-- [ ] `/td-plan` probada con input imperfecto (un ID a medias, o "paso 4" en vez del nombre) — las
-      skills se crearon en la sesión de instalación y esa sesión no las podía cargar todavía.
-- [ ] `docs-ratchet` visto dar ROJO con un doc huérfano inyectado (necesita un HEAD previo).
+- [x] `/td-plan` probada con input imperfecto ("paso 4"): normalizó al ítem 4 del paso 1, declaró
+      la dependencia de los ítems 1–3 y marcó el modelo `SIN DECLARAR` (2026-09-13).
+- [x] `docs-ratchet` visto dar ROJO con `docs/SUELTO.md` huérfano inyectado (2026-09-13).
 - [ ] ⛔ Andrés: `make hooks` en su clon y confirmar que el pre-commit le corre.
 
 ## Pasos siguientes (no planificados todavía)

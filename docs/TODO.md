@@ -60,6 +60,11 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - **Prioridad:** el paso 1 sigue primero, con `projects` y JWT desde el día uno. Login web y
   pantalla de proyectos después (paso 1.5, antes del indexador).
 
+- **Redis: no** (2026-09-13). Hay uno en el proyecto de Railway (de syntroAuth), pero este servicio
+  no lo usa: reserva/claims/PAT viven en Postgres con transacciones; el JWKS se cachea en memoria
+  (un solo proceso). Se reabre solo si aparecen réplicas (rate limit o cache de revocación
+  compartida). Compartir el de syntroAuth mezclaría estado de dos servicios.
+
 ## Chasis (pendientes de la instalación)
 
 - [x] `/td-plan` probada con input imperfecto ("paso 4"): normalizó al ítem 4 del paso 1, declaró

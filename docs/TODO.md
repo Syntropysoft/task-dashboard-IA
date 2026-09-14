@@ -13,7 +13,11 @@ Fuente de verdad del estado. Lo que no está acá, no está pendiente.
 Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá solo el estado:
 
 - [ ] 0. Stack decidido (Rust recomendado; alternativa .NET AOT con spike previo)
-- [ ] 1. Scaffolding + `/health` + Dockerfile + deploy vacío en Railway + Postgres
+- [x] 1. Scaffolding + `/health` + Dockerfile — medido 2026-09-13: imagen 8 MB, RAM ~1 MB,
+      `/health` 200 en 3 ms, SIGTERM limpio. CI en `.github/workflows/ci.yml`.
+      - [ ] ⛔ Gabriel: proyecto en Railway con el repo conectado (deploy automático desde
+        `main`, builder Dockerfile) + servicio Postgres 1 vCPU/1 GB + app sleeping. Verificar
+        `curl https://<app>.up.railway.app/health`.
 - [ ] 2. Migraciones con el esquema
 - [ ] 3a. JWT de syntroAuth validado contra JWKS (`/api/me`)
 - [ ] 3b. API mínima: projects / members / tokens (PAT) / sequences

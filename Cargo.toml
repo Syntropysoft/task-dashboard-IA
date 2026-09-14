@@ -1,0 +1,16 @@
+[workspace]
+resolver = "3"
+members = ["apps/api"]
+
+[workspace.package]
+edition = "2024"
+license = "UNLICENSED"
+publish = false
+
+# Perfil de release orientado al binario chico: Railway cobra por RAM y la imagen viaja en cada deploy.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

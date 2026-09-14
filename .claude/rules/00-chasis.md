@@ -27,10 +27,9 @@ No hace falta para ninguna otra tarea.
 
 ### 3.1 `verification-loop` — nada se cierra sin verificar
 Toda tarea termina ejecutando el **gate real**, no una simulación: `make gate`, que encadena
-`cargo clippy --all-targets -- -D warnings` → `cargo test` → `node scripts/chasis-check.mjs` →
-`node scripts/contexto-check.mjs` → `node scripts/docs-linkcheck.mjs`.
-⚠️ **Todavía no hay `Cargo.toml`**: hasta el paso 1 del plan, `make gate` corre solo los tres
-gates de Node y lo dice. ❌ NEVER citar clippy/test como corridos mientras no exista el crate.
+`cargo fmt --check` → `cargo clippy --all-targets -- -D warnings` → `cargo test` →
+`node scripts/chasis-check.mjs` → `node scripts/contexto-check.mjs` → `node scripts/docs-linkcheck.mjs`.
+Es lo mismo que corre `.github/workflows/ci.yml` en cada PR; si difieren, manda el CI.
 ❌ NEVER dar por hecha una tarea porque "compila". El gate es la prueba, no el criterio propio.
 ✅ ALWAYS si el gate no corrió (falta infra, base caída), decirlo explícito — no fingir verde.
 
@@ -93,8 +92,9 @@ barrera para un ADR es extremadamente alta.
 ## 5. Gate de salida (copiar en cada skill)
 
 ```
-- [ ] cargo clippy --all-targets -- -D warnings ... verde (o "no existe el crate todavía")
-- [ ] cargo test ................................. verde (o "no existe el crate todavía")
+- [ ] cargo fmt --all --check .................... verde
+- [ ] cargo clippy --all-targets -- -D warnings ... verde
+- [ ] cargo test ................................. verde
 - [ ] node scripts/chasis-check.mjs .............. verde (protege `.claude/` — lo que ningún otro gate mira)
 - [ ] node scripts/contexto-check.mjs ............ verde (las reglas no mienten sobre el repo)
 - [ ] node scripts/docs-linkcheck.mjs ............ sin problemas nuevos contra HEAD

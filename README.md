@@ -7,7 +7,7 @@ copia. **Un dato, un dueño.**
 
 ## Estado
 
-Sin código todavía. Está el contexto, el plan del paso 1 y el chasis de trabajo.
+Paso 1 en curso: `apps/api` responde `/health`; falta la base, la auth y las herramientas MCP.
 
 - [docs/CONTEXTO-INICIAL.md](docs/CONTEXTO-INICIAL.md) — el problema, la lección de diseño y las
   decisiones tomadas. Punto de partida histórico, no estado.
@@ -27,15 +27,29 @@ Un solo servicio en **Railway** (backend + MCP por HTTP + indexador + frontend e
 **Postgres** gestionado (1 vCPU / 1 GB). Identidad: **syntroAuth** (JWT + JWKS); esta app autoriza
 (proyectos, membresía, PATs para el MCP). Lenguaje: Rust. Fecha del paso 1: **2026-09-30**.
 
-Layout previsto del monorepo — se crea cuando entra el código, no antes:
+Layout del monorepo (workspace de Cargo; lo que no existe se crea cuando entra el código):
 
 ```
-apps/api/    # Rust: axum + rmcp + sqlx. Sirve /mcp, /api, /health y los estáticos de web.
-apps/web/    # frontend del dashboard (paso 3)
-db/          # migraciones sqlx
+apps/api/    # Rust: axum (+ rmcp y sqlx cuando lleguen). Sirve /health, /api, /mcp.
+apps/web/    # frontend del dashboard (paso 3) — no existe todavía
+db/          # migraciones sqlx (paso 2) — no existe todavía
 docs/        # bóveda: contexto, plan, TODO, gotchas, decisiones
 scripts/     # gates del chasis (vendored de chasis-kit; no se re-estilan acá)
 ```
+
+Correr en local:
+
+```bash
+cargo run -p task-dashboard-api
+```
+
+`curl localhost:8080/health`. Con Docker: `docker build -t td .` y `docker run -p 8080:8080 td`.
+
+## Deploy
+
+Railway construye el `Dockerfile` y despliega **solo cuando `main` cambia** (repo conectado al
+servicio; `railway.json` fija el healthcheck en `/health`). No hay paso de deploy en CI: la CI
+(`.github/workflows/ci.yml`) es el gate que corre antes, en cada PR hacia `main`.
 
 ## Cómo se trabaja
 

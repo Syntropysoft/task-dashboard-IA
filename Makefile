@@ -10,7 +10,7 @@ hooks:
 # Gate completo. Mientras no exista Cargo.toml, corre solo la parte de Node y lo dice.
 gate: gate-node
 	@if [ -f Cargo.toml ]; then \
-	  cargo clippy --all-targets -- -D warnings && cargo test; \
+	  cargo fmt --all --check && cargo clippy --all-targets -- -D warnings && cargo test; \
 	else \
 	  echo "⚠️  sin Cargo.toml todavía: clippy y test NO corrieron (paso 1 del plan)"; \
 	fi

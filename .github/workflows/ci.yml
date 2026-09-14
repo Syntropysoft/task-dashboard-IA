@@ -1,0 +1,36 @@
+# Gate del repo. Es el mismo `make gate` de local: si difieren, el que manda es este archivo.
+# El deploy NO vive acá: Railway está conectado al repo y despliega solo cuando `main` cambia
+# (Settings → Source en el servicio). Esta CI es lo que corre ANTES, en cada PR hacia main.
+name: gate
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: gate (fmt → clippy → test → chasis/contexto/docs)
+        run: make gate
+      - name: specs de los gates del chasis
+        run: node --test scripts/*.spec.mjs
+      # La imagen se construye acá para que un Dockerfile roto no llegue a main y falle recién en Railway.
+      - name: docker build
+        run: docker build -t task-dashboard-api:ci .
+      - name: la imagen arranca y responde /health
+        run: |
+          docker run -d --rm --name ci -p 8080:8080 task-dashboard-api:ci
+          for i in $(seq 1 20); do curl -fs http://localhost:8080/health && break; sleep 0.5; done
+          curl -fs http://localhost:8080/health
+          docker stop ci

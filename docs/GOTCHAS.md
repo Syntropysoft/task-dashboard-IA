@@ -42,3 +42,10 @@ trabas. *Verificado 2026-09-13* en `apps/api/tests/common/mod.rs`. ❌ NEVER usa
 Dockerfile tiene que copiar `db/` al stage de build o el binario compila con cero migraciones y
 arranca "al día" sobre una base vacía — sin error. *Verificado 2026-09-13:* el `COPY db db` está
 en el Dockerfile y el smoke de la CI arranca la imagen contra un Postgres real.
+
+**`jsonwebtoken` valida `aud`/`iss` solo si el claim está presente.** `Validation::new` exige
+únicamente `exp`; con `set_audience` + `set_issuer` un token **sin** `aud` (o sin `iss`) pasaba
+igual. Hay que declarar `set_required_spec_claims(&["exp", "iss", "aud", "sub"])`. *Cazado por
+test el 2026-09-13* (`apps/api/tests/auth.rs`, caso "sin aud"); lo intuitivo —"configuré la
+audiencia, entonces se exige"— está mal. El crate además se niega a firmar HS256 con una clave
+RSA: para probar el header forjado se reemplaza el primer segmento del token a mano.

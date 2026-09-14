@@ -86,8 +86,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [ ] ⛔ Gabriel: **cerrar el proxy TCP público de Postgres** (`altaria.proxy.rlwy.net:27317`)
       cuando todo esté desplegado y no haga falta entrar desde local. Decidido 2026-09-13: la
       pública es solo para desarrollo/pruebas.
-- [ ] Sugerencia: los tests de auth/api generan una clave RSA de 2048 bits por test (~16 s en
-      total). Cachear la clave en un `OnceLock` del helper bajaría el gate a segundos.
+- [x] Los tests de auth/api generaban una clave RSA por test (~16 s por binario). Ahora hay un
+      depósito por binario (`KEY_STORE`, `OnceLock`) que se crea con la primera clave pedida y
+      muere con el proceso (2026-09-14).
 
 ## Chasis (pendientes de la instalación)
 

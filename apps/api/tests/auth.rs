@@ -100,7 +100,7 @@ async fn vencido_otro_iss_otro_aud_o_sin_aud_es_401() {
 #[tokio::test]
 async fn firmado_por_otra_clave_es_401_aunque_el_kid_coincida() {
     let real = Signer::generate("k1");
-    let impostor = Signer::generate("k1"); // mismo kid, otra clave privada
+    let impostor = Signer::generate_fresh("k1"); // mismo kid, otra clave privada, fuera del depósito
     let jwks = FakeJwks::serve(&[&real]).await;
     let state = ready_state(&jwks).await;
 

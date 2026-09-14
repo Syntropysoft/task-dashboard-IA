@@ -2,7 +2,8 @@
 //! 127.0.0.1:0, y un fabricante de tokens con los defaults del contrato real (`iss`/`aud`
 //! `SyntroAuth`, RS256, `kid`). Cada test elige qué torcer.
 
-use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{Router, routing::get};
@@ -17,29 +18,73 @@ use task_dashboard_api::auth::JwtConfig;
 pub const ISS: &str = "SyntroAuth";
 pub const AUD: &str = "SyntroAuth";
 
-pub struct Signer {
-    pub kid: String,
+/// Par RSA ya generado. Generar 2048 bits cuesta ~1-2 s; se hace una vez por `kid` y por
+/// binario de tests (ver `KEY_STORE`).
+struct KeyMaterial {
     enc: EncodingKey,
     jwk: Value,
 }
 
+/// Depósito de claves del binario de tests: vive desde la primera clave pedida hasta que el
+/// proceso termina — los tests de un mismo binario corren en hilos del mismo proceso, así que
+/// comparten el depósito y ninguno vuelve a pagar la generación. Cada `kid` tiene SU par fijo.
+static KEY_STORE: OnceLock<Mutex<HashMap<String, Arc<KeyMaterial>>>> = OnceLock::new();
+
+fn key_for(kid: &str) -> Arc<KeyMaterial> {
+    let store = KEY_STORE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Some(k) = store.lock().unwrap().get(kid) {
+        return k.clone();
+    }
+    // Generar FUERA del lock: los tests arrancan en paralelo y cada kid se genera en su hilo.
+    // Si dos hilos piden el mismo kid a la vez, gana el primero que inserta y el otro descarta
+    // la suya — se paga una clave de más, nunca se reparten dos claves distintas para un kid.
+    let fresh = Arc::new(fresh_key(kid));
+    store
+        .lock()
+        .unwrap()
+        .entry(kid.to_string())
+        .or_insert(fresh)
+        .clone()
+}
+
+fn fresh_key(kid: &str) -> KeyMaterial {
+    let mut rng = rand::thread_rng();
+    let private = RsaPrivateKey::new(&mut rng, 2048).expect("rsa keygen");
+    let public = RsaPublicKey::from(&private);
+    let pem = private
+        .to_pkcs1_pem(rsa::pkcs1::LineEnding::LF)
+        .expect("pem");
+    let jwk = json!({
+        "kty": "RSA", "use": "sig", "alg": "RS256", "kid": kid,
+        "n": URL_SAFE_NO_PAD.encode(public.n().to_bytes_be()),
+        "e": URL_SAFE_NO_PAD.encode(public.e().to_bytes_be()),
+    });
+    KeyMaterial {
+        enc: EncodingKey::from_rsa_pem(pem.as_bytes()).expect("encoding key"),
+        jwk,
+    }
+}
+
+pub struct Signer {
+    pub kid: String,
+    key: Arc<KeyMaterial>,
+}
+
 impl Signer {
+    /// La clave del depósito para este `kid`: misma clave en todos los tests del binario.
     pub fn generate(kid: &str) -> Signer {
-        let mut rng = rand::thread_rng();
-        let private = RsaPrivateKey::new(&mut rng, 2048).expect("rsa keygen");
-        let public = RsaPublicKey::from(&private);
-        let pem = private
-            .to_pkcs1_pem(rsa::pkcs1::LineEnding::LF)
-            .expect("pem");
-        let jwk = json!({
-            "kty": "RSA", "use": "sig", "alg": "RS256", "kid": kid,
-            "n": URL_SAFE_NO_PAD.encode(public.n().to_bytes_be()),
-            "e": URL_SAFE_NO_PAD.encode(public.e().to_bytes_be()),
-        });
         Signer {
             kid: kid.to_string(),
-            enc: EncodingKey::from_rsa_pem(pem.as_bytes()).expect("encoding key"),
-            jwk,
+            key: key_for(kid),
+        }
+    }
+
+    /// Una clave NUEVA que no entra al depósito: para simular un impostor que firma con el
+    /// mismo `kid` pero otra clave privada.
+    pub fn generate_fresh(kid: &str) -> Signer {
+        Signer {
+            kid: kid.to_string(),
+            key: Arc::new(fresh_key(kid)),
         }
     }
 
@@ -63,7 +108,7 @@ impl Signer {
         let kid = spec.kid.clone().unwrap_or_else(|| self.kid.clone());
         let mut header = Header::new(Algorithm::RS256);
         header.kid = Some(kid.clone());
-        let token = encode(&header, &claims, &self.enc).expect("encode");
+        let token = encode(&header, &claims, &self.key.enc).expect("encode");
         if spec.alg == Algorithm::RS256 {
             return token;
         }
@@ -120,7 +165,10 @@ pub struct FakeJwks {
 impl FakeJwks {
     pub async fn serve(signers: &[&Signer]) -> FakeJwks {
         let keys = Arc::new(RwLock::new(
-            signers.iter().map(|s| s.jwk.clone()).collect::<Vec<_>>(),
+            signers
+                .iter()
+                .map(|s| s.key.jwk.clone())
+                .collect::<Vec<_>>(),
         ));
         let hits = Arc::new(RwLock::new(0usize));
         let validate = Arc::new(RwLock::new(ValidateMode::Ok));
@@ -172,7 +220,7 @@ impl FakeJwks {
     }
 
     pub fn rotate_to(&self, signer: &Signer) {
-        *self.keys.write().unwrap() = vec![signer.jwk.clone()];
+        *self.keys.write().unwrap() = vec![signer.key.jwk.clone()];
     }
 
     pub fn hits(&self) -> usize {

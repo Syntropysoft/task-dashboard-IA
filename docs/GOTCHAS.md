@@ -49,3 +49,10 @@ igual. Hay que declarar `set_required_spec_claims(&["exp", "iss", "aud", "sub"])
 test el 2026-09-13* (`apps/api/tests/auth.rs`, caso "sin aud"); lo intuitivo —"configuré la
 audiencia, entonces se exige"— está mal. El crate además se niega a firmar HS256 con una clave
 RSA: para probar el header forjado se reemplaza el primer segmento del token a mano.
+
+**Generar RSA de 2048 bits en tests, en perfil debug, cuesta segundos por clave.** Dos cosas
+juntas lo bajan de ~16 s a <1 s por binario: un depósito por binario (`KEY_STORE`, `OnceLock`
+en `tests/common/jwks.rs`) que genera cada `kid` una sola vez y **fuera del lock**, y
+`[profile.dev.package.rsa] opt-level = 3` (+ `num-bigint-dig`) en el `Cargo.toml` raíz — la
+aritmética de bignum es lo lento, no el resto del árbol. *Verificado 2026-09-14*: `auth` 14,1 s →
+0,48 s; `api` 16,2 s → 0,92 s.

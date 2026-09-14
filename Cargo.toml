@@ -14,3 +14,10 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# Generar RSA en los tests es aritmética de bignum: en debug tarda segundos por clave. Optimizar
+# solo estos crates deja el resto del árbol con símbolos de debug y compila igual de rápido.
+[profile.dev.package.rsa]
+opt-level = 3
+[profile.dev.package.num-bigint-dig]
+opt-level = 3

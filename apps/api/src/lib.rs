@@ -7,6 +7,7 @@ pub mod api;
 pub mod auth;
 pub mod config;
 pub mod db;
+pub mod ids;
 pub mod mcp;
 pub mod state;
 

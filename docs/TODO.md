@@ -43,7 +43,10 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       en las extensions; inexistente / revocado / prefijo ajeno / JWT → el mismo 401;
       `last_used_at` como mucho una vez por minuto. Sonda `GET /mcp/whoami` hasta que llegue
       rmcp (ítem 7). 4 tests contra Postgres real, con PATs emitidos por la API (2026-09-14).
-- [ ] 4. `reservar_id` + test de concurrencia
+- [x] 4. `reservar_id` (`ids.rs` + `POST /mcp/reservar_id` con PAT): `UPDATE … RETURNING` sobre el
+      contador + auditoría en la misma transacción. Test: 50 tareas en paralelo → 50 números
+      distintos y consecutivos, contador y auditoría exactos; dos proyectos con el mismo prefijo
+      independientes; sin seed → `PREFIJO_DESCONOCIDO` (404) y sin rastro (2026-09-14).
 - [ ] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas`
 - [ ] 6. `sugerir`
 - [ ] 7. MCP sobre `/mcp` con las 5 herramientas, probado desde Claude Code

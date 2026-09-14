@@ -9,6 +9,7 @@ use serde_json::json;
 use tracing::error;
 
 use crate::auth::AuthError;
+use crate::ids::IdError;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -18,6 +19,8 @@ pub enum ApiError {
     NotFound,
     /// 403 — sos miembro pero no owner.
     Forbidden,
+    /// 404 — el proyecto no tiene contador para ese prefijo: falta el seed.
+    UnknownPrefix,
     /// 409 — conflicto con el estado actual (slug repetido, seed por debajo del contador).
     Conflict(&'static str),
     /// 503 — una dependencia (syntroAuth) no pudo confirmar; fail-closed.
@@ -29,6 +32,15 @@ pub enum ApiError {
 impl From<sqlx::Error> for ApiError {
     fn from(e: sqlx::Error) -> Self {
         ApiError::Db(e)
+    }
+}
+
+impl From<IdError> for ApiError {
+    fn from(e: IdError) -> Self {
+        match e {
+            IdError::UnknownPrefix => ApiError::UnknownPrefix,
+            IdError::Db(e) => ApiError::Db(e),
+        }
     }
 }
 
@@ -44,6 +56,7 @@ impl IntoResponse for ApiError {
             ApiError::Validation(c) => (StatusCode::BAD_REQUEST, c),
             ApiError::NotFound => (StatusCode::NOT_FOUND, "NOT_FOUND"),
             ApiError::Forbidden => (StatusCode::FORBIDDEN, "FORBIDDEN"),
+            ApiError::UnknownPrefix => (StatusCode::NOT_FOUND, "PREFIJO_DESCONOCIDO"),
             ApiError::Conflict(c) => (StatusCode::CONFLICT, c),
             ApiError::Unavailable(c) => (StatusCode::SERVICE_UNAVAILABLE, c),
             ApiError::Auth(e) => return e.into_response(),

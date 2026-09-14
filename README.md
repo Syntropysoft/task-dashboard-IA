@@ -51,6 +51,10 @@ tests de base crean una base efímera por test contra `TEST_DATABASE_URL` (la ex
 
 ## Deploy
 
+Railway: proyecto `stellar-wisdom` → servicio `task-dashboard-api` + `Postgres`. URL:
+`https://task-dashboard-api-production-9cb0.up.railway.app`. La infra se opera por el MCP de
+Railway desde Claude Code (ids en `docs/TODO.md` / memoria del agente), no a mano.
+
 Railway construye el `Dockerfile` y despliega **solo cuando `main` cambia** (repo conectado al
 servicio; `railway.json` fija el healthcheck en `/health`). No hay paso de deploy en CI: la CI
 (`.github/workflows/ci.yml`) es el gate que corre antes, en cada PR hacia `main`.

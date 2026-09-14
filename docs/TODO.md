@@ -15,9 +15,16 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [ ] 0. Stack decidido (Rust recomendado; alternativa .NET AOT con spike previo)
 - [x] 1. Scaffolding + `/health` + Dockerfile — medido 2026-09-13: imagen 8 MB, RAM ~1 MB,
       `/health` 200 en 3 ms, SIGTERM limpio. CI en `.github/workflows/ci.yml`.
-      - [ ] ⛔ Gabriel: proyecto en Railway con el repo conectado (deploy automático desde
-        `main`, builder Dockerfile) + servicio Postgres 1 vCPU/1 GB + app sleeping. Verificar
-        `curl https://<app>.up.railway.app/health`.
+      - [x] Railway armado por MCP el 2026-09-13: proyecto `stellar-wisdom`, servicio
+        `task-dashboard-api` conectado a `main` (Dockerfile, healthcheck `/health`, sleeping ON,
+        ON_FAILURE×3), Postgres (template oficial, volumen 5 GB) y
+        `https://task-dashboard-api-production-9cb0.up.railway.app`. Variables: `DATABASE_URL`
+        referencia al Postgres; `SYNTROAUTH_*` con `JWKS_URL` **placeholder**.
+      - [ ] ⛔ Gabriel: mergear el PR #1 (`main` todavía no tiene Dockerfile → el primer deploy
+        falló, esperado) y verificar `curl .../health` + log `migraciones al día`.
+      - [ ] ⛔ Gabriel: URL real de syntroAuth para `SYNTROAUTH_JWKS_URL` (hoy es un placeholder:
+        `/api` da 503 hasta cambiarla). No aparece ningún proyecto syntroAuth en esta cuenta de
+        Railway (`list-projects`: stellar-wisdom, enthusiastic-friendship, examples-patterns).
 - [x] 2. Migraciones con el esquema (`db/migrations/20260913000001_init.sql`, embebidas, corren al
       arrancar; idempotencia y `project_id NOT NULL` en toda tabla verificados por test contra
       Postgres efímero). Sin `DATABASE_URL` el servicio no arranca (2026-09-13).

@@ -62,9 +62,15 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       hace handshake. Errores de dominio como `is_error` con `CODIGO: explicación`. 5 tests
       end-to-end por socket real: handshake, tools/list, flujo completo, errores, 401, host
       ajeno, sesión perdida → 404 (2026-09-14).
+      - [x] Desplegado en Railway (PR #3, 2026-09-14): `POST /mcp` sin PAT → 401 verificado.
       - [ ] ⛔ Probar desde Claude Code real contra Railway (ítem 9): `claude mcp add --transport
-        http task-dashboard <url>/mcp --header "Authorization: Bearer tdp_…"`.
-- [ ] 8. Seed del contador `MVC` de Convertix con el máximo ID real del repo
+        http task-dashboard <url>/mcp --header "Authorization: Bearer tdp_…"`. Necesita un PAT,
+        que necesita `/api`, que necesita la URL de syntroAuth.
+- [ ] 8. Seed de Convertix. **Números medidos el 2026-09-14** en `motor-ventas@develop`
+      (`e8667f5`), barriendo todo el árbol (fichas abiertas, DONE, auditorías, Trello):
+      `MVC` máximo `MVC-0406` → **next 407**; `FE` máximo `FE-0124` → **next 125**. Cargar con
+      `PUT /api/projects/convertix/sequences/{MVC,FE}` una vez que `/api` valide JWTs (necesita
+      la URL de syntroAuth). Re-medir antes de cargar si pasaron días.
 - [ ] 9. ⛔ Andrés: registro en syntroAuth, member, PAT, alta del MCP + regla en el `CLAUDE.md` de Convertix
 - [ ] 10. Firestore `backlog-mnc` apagado
 

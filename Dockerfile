@@ -24,6 +24,7 @@ RUN mkdir -p apps/api/src && echo 'fn main() {}' > apps/api/src/main.rs && touch
     && rm -rf apps/api/src
 
 COPY apps apps
+COPY db db
 # touch: cargo decide por mtime y el COPY puede dejar los .rs más viejos que el stub compilado.
 RUN touch apps/api/src/main.rs apps/api/src/lib.rs \
     && cargo build --release --target "$(cat /target)" -p task-dashboard-api \
@@ -34,6 +35,7 @@ RUN touch apps/api/src/main.rs apps/api/src/lib.rs \
 # llegará en 3a y traerá ca-certificates a esta capa).
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /task-dashboard-api /task-dashboard-api
+# DATABASE_URL es obligatoria (la inyecta el servicio Postgres de Railway): sin base no arranca.
 ENV PORT=8080 RUST_LOG=info
 EXPOSE 8080
 ENTRYPOINT ["/task-dashboard-api"]

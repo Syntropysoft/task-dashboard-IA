@@ -12,17 +12,35 @@ concurrency:
 jobs:
   gate:
     runs-on: ubuntu-latest
+    # Mismo Postgres que docker-compose.yml: los tests crean una base efímera por test y el
+    # smoke de la imagen arranca contra él (sin DATABASE_URL el binario no levanta, a propósito).
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: td
+          POSTGRES_PASSWORD: td
+          POSTGRES_DB: task_dashboard
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U td -d task_dashboard"
+          --health-interval 2s --health-timeout 2s --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://td:td@localhost:55432/task_dashboard
+      DATABASE_URL: postgres://td:td@localhost:55432/task_dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: gate (fmt → clippy → test → chasis/contexto/docs)
-        run: make gate
+        # gate-node + cargo directo: el target `gate` de local también levanta docker compose,
+        # que acá no hace falta (el Postgres es un service container).
+        run: make gate-node && cargo fmt --all --check && cargo clippy --all-targets -- -D warnings && cargo test
       - name: specs de los gates del chasis
         run: node --test scripts/*.spec.mjs
       # La imagen se construye acá para que un Dockerfile roto no llegue a main y falle recién en Railway.
@@ -30,7 +48,8 @@ jobs:
         run: docker build -t task-dashboard-api:ci .
       - name: la imagen arranca y responde /health
         run: |
-          docker run -d --rm --name ci -p 8080:8080 task-dashboard-api:ci
+          docker run -d --rm --name ci --network host \
+            -e DATABASE_URL=postgres://td:td@localhost:55432/task_dashboard task-dashboard-api:ci
           for i in $(seq 1 20); do curl -fs http://localhost:8080/health && break; sleep 0.5; done
           curl -fs http://localhost:8080/health
           docker stop ci

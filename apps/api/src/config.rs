@@ -6,17 +6,21 @@ use std::net::{Ipv4Addr, SocketAddr};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
     pub addr: SocketAddr,
+    /// Obligatoria: sin base no hay servicio. Un `/health` verde sin base mentiría.
+    pub database_url: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ConfigError {
     InvalidPort(String),
+    MissingDatabaseUrl,
 }
 
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ConfigError::InvalidPort(v) => write!(f, "PORT inválido: {v:?} (se espera 1..=65535)"),
+            ConfigError::MissingDatabaseUrl => write!(f, "falta DATABASE_URL (obligatoria)"),
         }
     }
 }
@@ -36,8 +40,13 @@ impl Config {
                 _ => return Err(ConfigError::InvalidPort(raw)),
             },
         };
+        let database_url = match get("DATABASE_URL") {
+            Some(u) if !u.trim().is_empty() => u,
+            _ => return Err(ConfigError::MissingDatabaseUrl),
+        };
         Ok(Config {
             addr: SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)),
+            database_url,
         })
     }
 }

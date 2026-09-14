@@ -1,4 +1,4 @@
-use task_dashboard_api::{app, config::Config};
+use task_dashboard_api::{app, config::Config, db};
 use tracing::info;
 
 #[tokio::main]
@@ -8,6 +8,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let config = Config::from_env(|k| std::env::var(k).ok())?;
+    // Conectar y migrar ANTES de escuchar: si la base no está, el proceso muere y Railway lo
+    // reintenta (restartPolicy ON_FAILURE) — nunca un /health verde sin base.
+    let _pool = db::connect_and_migrate(&config.database_url).await?;
+    info!("base conectada y migraciones al día");
     let listener = tokio::net::TcpListener::bind(config.addr).await?;
     info!(addr = %config.addr, "task-dashboard-api escuchando");
 

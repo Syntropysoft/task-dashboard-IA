@@ -18,7 +18,9 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       - [ ] ⛔ Gabriel: proyecto en Railway con el repo conectado (deploy automático desde
         `main`, builder Dockerfile) + servicio Postgres 1 vCPU/1 GB + app sleeping. Verificar
         `curl https://<app>.up.railway.app/health`.
-- [ ] 2. Migraciones con el esquema
+- [x] 2. Migraciones con el esquema (`db/migrations/20260913000001_init.sql`, embebidas, corren al
+      arrancar; idempotencia y `project_id NOT NULL` en toda tabla verificados por test contra
+      Postgres efímero). Sin `DATABASE_URL` el servicio no arranca (2026-09-13).
 - [ ] 3a. JWT de syntroAuth validado contra JWKS (`/api/me`)
 - [ ] 3b. API mínima: projects / members / tokens (PAT) / sequences
 - [ ] 3c. Middleware PAT en `/mcp`

@@ -28,3 +28,17 @@ target se deriva de `TARGETARCH` en el `Dockerfile` (amd64 → x86_64, arm64 →
 2026-09-13:* con el target fijo, `docker build` rompía; derivado, la imagen queda en 8 MB y arranca
 en las dos plataformas. Si algún día hace falta la imagen amd64 desde el Mac: `docker build
 --platform linux/amd64`.
+
+**sqlx 0.9 rechaza SQL dinámico en compilación y exige `'static` en `Executor::execute`.**
+`sqlx::query(&string)` falla con *"dynamic SQL strings should be audited for possible
+injections"* (E0277), y `conn.execute(s.as_str())` con *"`sql` does not live long enough"*
+(E0597) — el trait pide `E: 'q` con `'q` ligado a la conexión. Para DDL con un nombre que
+generamos nosotros (`create database td_test_<uuid>`) la salida es
+`sqlx::query(AssertSqlSafe(string_owned))`: el `String` se mueve adentro y desaparecen las dos
+trabas. *Verificado 2026-09-13* en `apps/api/tests/common/mod.rs`. ❌ NEVER usar
+`AssertSqlSafe` con texto que venga de un usuario: es exactamente la auditoría que desactiva.
+
+**Las migraciones se embeben al compilar (`sqlx::migrate!("../../db/migrations")`).** El
+Dockerfile tiene que copiar `db/` al stage de build o el binario compila con cero migraciones y
+arranca "al día" sobre una base vacía — sin error. *Verificado 2026-09-13:* el `COPY db db` está
+en el Dockerfile y el smoke de la CI arranca la imagen contra un Postgres real.

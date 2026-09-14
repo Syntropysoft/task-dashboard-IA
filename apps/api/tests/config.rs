@@ -12,24 +12,38 @@ fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
 
 #[test]
 fn sin_port_usa_8080() {
-    let c = Config::from_env(env(&[])).unwrap();
+    let c = Config::from_env(env(&[("DATABASE_URL", "postgres://x")])).unwrap();
     assert_eq!(c.addr.port(), 8080);
 }
 
 #[test]
 fn port_de_railway_se_respeta() {
-    let c = Config::from_env(env(&[("PORT", "6543")])).unwrap();
+    let c = Config::from_env(env(&[("PORT", "6543"), ("DATABASE_URL", "postgres://x")])).unwrap();
     assert_eq!(c.addr.port(), 6543);
 }
 
 #[test]
 fn port_invalido_es_error_no_default() {
     for raw in ["abc", "0", "70000", ""] {
-        let r = Config::from_env(env(&[("PORT", raw)]));
+        let r = Config::from_env(env(&[("PORT", raw), ("DATABASE_URL", "postgres://x")]));
         assert_eq!(
             r,
             Err(ConfigError::InvalidPort(raw.to_string())),
             "PORT={raw:?}"
+        );
+    }
+}
+
+#[test]
+fn sin_database_url_no_arranca() {
+    for vars in [
+        vec![],
+        vec![("DATABASE_URL", "")],
+        vec![("DATABASE_URL", "   ")],
+    ] {
+        assert_eq!(
+            Config::from_env(env(&vars)),
+            Err(ConfigError::MissingDatabaseUrl)
         );
     }
 }

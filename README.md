@@ -30,20 +30,22 @@ Un solo servicio en **Railway** (backend + MCP por HTTP + indexador + frontend e
 Layout del monorepo (workspace de Cargo; lo que no existe se crea cuando entra el código):
 
 ```
-apps/api/    # Rust: axum (+ rmcp y sqlx cuando lleguen). Sirve /health, /api, /mcp.
+apps/api/    # Rust: axum + sqlx (+ rmcp cuando llegue). Sirve /health, /api, /mcp.
 apps/web/    # frontend del dashboard (paso 3) — no existe todavía
-db/          # migraciones sqlx (paso 2) — no existe todavía
+db/          # migraciones sqlx, embebidas en el binario al compilar
 docs/        # bóveda: contexto, plan, TODO, gotchas, decisiones
 scripts/     # gates del chasis (vendored de chasis-kit; no se re-estilan acá)
 ```
 
-Correr en local:
+Correr en local (necesita el Postgres de `docker-compose.yml`; `make db-up` lo levanta):
 
 ```bash
-cargo run -p task-dashboard-api
+make db-up && DATABASE_URL=postgres://td:td@localhost:55432/task_dashboard cargo run -p task-dashboard-api
 ```
 
-`curl localhost:8080/health`. Con Docker: `docker build -t td .` y `docker run -p 8080:8080 td`.
+`curl localhost:8080/health`. Las migraciones (`db/migrations`) corren solas al arrancar. Los
+tests de base crean una base efímera por test contra `TEST_DATABASE_URL` (la exporta el
+`Makefile`); `make gate` corre todo.
 
 ## Deploy
 

@@ -4,6 +4,7 @@ use axum::{Json, Router, routing::get};
 use serde::Serialize;
 
 pub mod config;
+pub mod db;
 
 /// Respuesta de `/health`. Railway la usa como healthcheck del deploy; no dice nada de la base
 /// a propósito: un healthcheck que depende de Postgres tumba el servicio cuando la base parpadea.

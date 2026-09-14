@@ -68,7 +68,7 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       Postgres de Railway, decisión de Gabriel porque el login de syntroAuth está roto): proyecto
       `convertix` (motor-ventas, `main`), Gabriel owner (`sub 0bc75872-…`), `MVC → 407` y
       `FE → 125` (máximos medidos en `motor-ventas@develop e8667f5`: MVC-0406, FE-0124). Segunda
-      corrida: 0 inserts, mismas filas. Si pasan días antes de usarlo, re-medir y subir por
+      corrida: sin filas nuevas (los upserts reafirman las mismas 2 filas), contadores sin cambio. Si pasan días antes de usarlo, re-medir y subir por
       `PUT /api/projects/convertix/sequences/{prefijo}` (solo sube).
 - [ ] 9. ⛔ Andrés: registro en syntroAuth, member, PAT, alta del MCP + regla en el `CLAUDE.md` de Convertix
 - [ ] 10. Firestore `backlog-mnc` apagado

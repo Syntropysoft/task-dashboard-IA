@@ -248,19 +248,35 @@ async fn pat_se_muestra_una_vez_y_en_la_base_queda_solo_el_hash() {
         )
         .await;
     assert_eq!(status, StatusCode::CREATED, "{issued}");
-    let secret = issued["token"].as_str().unwrap().to_string();
-    assert!(secret.starts_with("tdp_"), "{secret}");
-    assert!(secret.len() > 40);
+    let token = issued["token"].as_str().unwrap().to_string();
+    let key_id = issued["key_id"].as_str().unwrap().to_string();
+    let secret = issued["secret"].as_str().unwrap().to_string();
+    assert_eq!(
+        token,
+        format!("tdp_{key_id}.{secret}"),
+        "un solo string con las dos partes"
+    );
+    assert_eq!(
+        key_id,
+        issued["id"].as_str().unwrap().replace('-', ""),
+        "key_id = id de la fila"
+    );
+    assert!(secret.len() >= 43, "32 bytes en base64url: {secret}");
 
     let (hash, name): (String, String) =
-        sqlx::query_as("select token_hash, name from access_tokens where id = $1")
+        sqlx::query_as("select secret_hash, name from access_tokens where id = $1")
             .bind(uuid::Uuid::parse_str(issued["id"].as_str().unwrap()).unwrap())
             .fetch_one(&w.state.pool)
             .await
             .unwrap();
     assert_eq!(name, "claude mac");
     assert_ne!(hash, secret);
-    assert_eq!(hash, task_dashboard_api::api::tokens::hash(&secret));
+    assert_ne!(hash, token);
+    assert_eq!(
+        hash,
+        task_dashboard_api::api::tokens::hash(&secret),
+        "solo el secret se hashea"
+    );
 
     let (_, list) = w
         .call(GABRIEL, Method::GET, "/api/projects/convertix/tokens", None)

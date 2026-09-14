@@ -9,10 +9,15 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use rmcp::transport::streamable_http_server::{
+    StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+};
+
 use crate::{
     api::{ApiError, sequences::prefijo_valido},
     auth::pat::{self, PatUser},
     claims, ids,
+    mcp_server::TaskDashboardMcp,
     state::AppState,
     suggestions,
 };
@@ -24,7 +29,25 @@ pub struct WhoAmI {
 }
 
 pub fn router(state: AppState) -> Router<AppState> {
+    // Sesiones en memoria: un cliente con handshake (`initialize`, todo lo anterior al protocolo
+    // 2026-07-28 — Claude Code hoy) las necesita; el modo sin sesión de rmcp solo sirve a
+    // clientes 2026-07-28 (verificado en rmcp-3.3.0 tower.rs `is_legacy_request`). Si el
+    // servicio duerme o redeploya, la sesión se pierde y el cliente recibe 404 → re-inicializa
+    // (spec MCP). TODO: validar con Claude Code real que re-inicializa solo (hipótesis,
+    // docs/TODO.md § Decisiones abiertas). Respuesta JSON cuando alcanza. allowed_hosts: rmcp solo acepta loopback por
+    // defecto (anti DNS-rebinding); el dominio público entra por config.
+    let cfg = StreamableHttpServerConfig::default()
+        .with_legacy_session_mode(true)
+        .with_json_response(true)
+        .with_allowed_hosts(state.mcp_allowed_hosts.clone());
+    let pool = state.pool.clone();
+    let mcp = StreamableHttpService::new(
+        move || Ok(TaskDashboardMcp::new(pool.clone())),
+        std::sync::Arc::new(LocalSessionManager::default()),
+        cfg,
+    );
     Router::new()
+        .route_service("/", mcp)
         .route("/whoami", get(whoami))
         .route("/reservar_id", post(reservar_id))
         .route("/tomar_ficha", post(tomar_ficha))

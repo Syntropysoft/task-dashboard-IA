@@ -6,7 +6,7 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, schemars::JsonSchema)]
 pub struct Reserved {
     pub id: String,
     pub prefix: String,

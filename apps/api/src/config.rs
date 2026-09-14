@@ -12,6 +12,8 @@ pub struct Config {
     pub database_url: String,
     /// Obligatorias las tres: sin ellas no hay forma de saber quién llama a `/api`.
     pub jwt: JwtConfig,
+    /// `MCP_ALLOWED_HOSTS` (coma) o, en Railway, `RAILWAY_PUBLIC_DOMAIN`; loopback siempre entra.
+    pub mcp_allowed_hosts: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -59,10 +61,29 @@ impl Config {
             audience: required("SYNTROAUTH_AUDIENCE")?,
             jwks_url: required("SYNTROAUTH_JWKS_URL")?,
         };
+        let mut mcp_allowed_hosts: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
+            .iter()
+            .map(|h| h.to_string())
+            .collect();
+        for h in get("MCP_ALLOWED_HOSTS")
+            .into_iter()
+            .chain(get("RAILWAY_PUBLIC_DOMAIN"))
+            .flat_map(|v| {
+                v.split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|h| !h.is_empty())
+        {
+            if !mcp_allowed_hosts.contains(&h) {
+                mcp_allowed_hosts.push(h);
+            }
+        }
         Ok(Config {
             addr: SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)),
             database_url,
             jwt,
+            mcp_allowed_hosts,
         })
     }
 }

@@ -1,5 +1,6 @@
-//! PAT para `/mcp`: `Authorization: Bearer tdp_…` → hash → (proyecto, usuario). Es la ÚNICA
-//! forma de resolver el proyecto de una llamada MCP: ninguna herramienta lo recibe por parámetro.
+//! PAT para `/mcp`: `Authorization: Bearer tdp_<key_id>.<secret>` → fila por `key_id` →
+//! comparación del hash del secret en tiempo constante → (proyecto, usuario). Es la ÚNICA forma
+//! de resolver el proyecto de una llamada MCP: ninguna herramienta lo recibe por parámetro.
 
 use axum::{
     extract::{FromRequestParts, Request, State},
@@ -8,6 +9,7 @@ use axum::{
     response::Response,
 };
 use sqlx::PgPool;
+use subtle::ConstantTimeEq;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -22,25 +24,36 @@ pub struct PatContext {
     pub user_sub: String,
 }
 
-/// Inexistente, revocado o con prefijo ajeno dan el mismo 401: un atacante no aprende nada
-/// de la diferencia. El detalle va al log.
+/// Mal formado, key_id inexistente, revocado o secret incorrecto dan el mismo 401: un atacante
+/// no aprende nada de la diferencia. El detalle (con el key_id, nunca el secret) va al log.
 pub async fn resolve(pool: &PgPool, bearer: &str) -> Result<PatContext, AuthError> {
-    if !bearer.starts_with(tokens::PREFIX) {
-        return Err(AuthError::Unauthorized("no es un PAT"));
-    }
-    let row: Option<(Uuid, Uuid, String)> = sqlx::query_as(
-        "select id, project_id, user_sub from access_tokens \
-         where token_hash = $1 and revoked_at is null",
+    let (key_id, secret) =
+        tokens::parse_token(bearer).ok_or(AuthError::Unauthorized("PAT mal formado"))?;
+    let row: Option<(Uuid, String, String)> = sqlx::query_as(
+        "select project_id, user_sub, secret_hash from access_tokens \
+         where id = $1 and revoked_at is null",
     )
-    .bind(tokens::hash(bearer))
+    .bind(key_id)
     .fetch_optional(pool)
     .await
     .map_err(|e| {
         warn!(error = %e, "base caída al resolver un PAT");
         AuthError::JwksUnavailable
     })?;
-    let (token_id, project_id, user_sub) =
-        row.ok_or(AuthError::Unauthorized("PAT desconocido o revocado"))?;
+    let Some((project_id, user_sub, secret_hash)) = row else {
+        warn!(%key_id, "PAT desconocido o revocado");
+        return Err(AuthError::Unauthorized("PAT desconocido o revocado"));
+    };
+    // Tiempo constante: que un secret casi correcto tarde lo mismo que uno cualquiera.
+    let ok: bool = tokens::hash(secret)
+        .as_bytes()
+        .ct_eq(secret_hash.as_bytes())
+        .into();
+    if !ok {
+        warn!(%key_id, "PAT con secret incorrecto");
+        return Err(AuthError::Unauthorized("secret incorrecto"));
+    }
+    let token_id = key_id;
 
     // Como mucho un UPDATE por minuto por token: es telemetría, no puede costar una escritura
     // por cada llamada del agente. Si falla, no bloquea la request.

@@ -48,7 +48,16 @@ make db-up && DATABASE_URL=postgres://td:td@localhost:55432/task_dashboard cargo
 el `sub`. Con ese JWT, la API mínima: `POST /api/projects`, `POST /api/projects/{slug}/members`,
 `POST /api/projects/{slug}/tokens` (devuelve el PAT `tdp_…` una sola vez),
 `PUT /api/projects/{slug}/sequences/{prefix}` (seed). Detalle en `docs/PLAN-PASO-1.md`.
-Las migraciones (`db/migrations`) corren solas al arrancar. Los
+Las migraciones (`db/migrations`) corren solas al arrancar.
+
+El MCP vive en `POST /mcp` (Streamable HTTP) y se autentica con el PAT. Alta en Claude Code:
+
+```bash
+claude mcp add --transport http task-dashboard https://<app>.up.railway.app/mcp --header "Authorization: Bearer tdp_..."
+```
+
+Herramientas: `reservar_id`, `tomar_ficha`, `liberar_ficha`, `fichas_tomadas`, `sugerir`. El
+proyecto y el usuario salen del PAT; ninguna acepta `proyecto` ni `quien`. Los
 tests de base crean una base efímera por test contra `TEST_DATABASE_URL` (la exporta el
 `Makefile`); `make gate` corre todo.
 

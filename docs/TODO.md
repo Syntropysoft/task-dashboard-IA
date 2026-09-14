@@ -47,7 +47,11 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
       contador + auditoría en la misma transacción. Test: 50 tareas en paralelo → 50 números
       distintos y consecutivos, contador y auditoría exactos; dos proyectos con el mismo prefijo
       independientes; sin seed → `PREFIJO_DESCONOCIDO` (404) y sin rastro (2026-09-14).
-- [ ] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas`
+- [x] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas` (`claims.rs` + rutas `/mcp/*` con PAT):
+      transacción con `FOR UPDATE`; `YA_TOMADA` (409) con quién y desde cuándo; retomar la propia
+      es idempotente; `force` pisa, loguea ambos y devuelve `previous_holder`; `NO_ES_TUYA` (403),
+      `NO_TOMADA` (409). Test: 20 tomas simultáneas de una ficha nueva → exactamente una gana;
+      aislamiento por proyecto (2026-09-14).
 - [ ] 6. `sugerir`
 - [ ] 7. MCP sobre `/mcp` con las 5 herramientas, probado desde Claude Code
 - [ ] 8. Seed del contador `MVC` de Convertix con el máximo ID real del repo

@@ -5,6 +5,7 @@ use serde::Serialize;
 
 pub mod api;
 pub mod auth;
+pub mod claims;
 pub mod config;
 pub mod db;
 pub mod ids;

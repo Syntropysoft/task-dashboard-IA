@@ -11,6 +11,7 @@ use tracing::error;
 use crate::auth::AuthError;
 use crate::claims::ClaimError;
 use crate::ids::IdError;
+use crate::suggestions::SuggestError;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -67,6 +68,16 @@ impl From<ClaimError> for ApiError {
             ClaimError::NotYours { held_by } => ApiError::NotYours { held_by },
             ClaimError::NotTaken => ApiError::Conflict("NO_TOMADA"),
             ClaimError::Db(e) => ApiError::Db(e),
+        }
+    }
+}
+
+impl From<SuggestError> for ApiError {
+    fn from(e: SuggestError) -> Self {
+        match e {
+            SuggestError::EmptyText => ApiError::Validation("TEXTO_VACIO"),
+            SuggestError::TooLong => ApiError::Validation("TEXTO_DEMASIADO_LARGO"),
+            SuggestError::Db(e) => ApiError::Db(e),
         }
     }
 }

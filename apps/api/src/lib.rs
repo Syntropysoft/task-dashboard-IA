@@ -11,6 +11,7 @@ pub mod db;
 pub mod ids;
 pub mod mcp;
 pub mod state;
+pub mod suggestions;
 
 use auth::AuthUser;
 use state::AppState;

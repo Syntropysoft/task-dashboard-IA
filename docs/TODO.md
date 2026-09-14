@@ -74,12 +74,15 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 
 ## Decisiones abiertas
 
-- [ ] ⛔ **syntroAuth (repo aparte)**: en producción `GET /api/tenants/by-name/default` falla con
-      `42P01: relation "syntro_auth.tenants" does not exist` — la base no tiene el schema
-      `syntro_auth` (¿rama `feature/rename-schema-syntro-auth` sin mergear, o migraciones sin
-      correr?). El login exige password cifrada con `/api/auth/security/public-key`
-      (`DECRYPTION_FAILED` si va en claro), como hace su frontend. Medido 2026-09-14. Es de
-      syntroAuth, no de este repo; condiciona el ítem 9.
+- [ ] ⛔ **syntroAuth (repo aparte)**: su base de producción (Postgres compartido con n8n) tiene
+      el schema **`janus`** (tablas `janus.users`, `janus.tenants`…), pero el código desplegado
+      consulta **`syntro_auth`** → `42P01: relation "syntro_auth.tenants" does not exist`. El
+      código quedó adelante de la base (rename de schema sin migrar). Hasta que se arregle, el
+      login de syntroAuth en producción no funciona y el ítem 9 está bloqueado. Además el login
+      exige la password cifrada con `/api/auth/security/public-key` (como hace su frontend).
+      Medido 2026-09-14 con acceso de solo lectura a esa base.
+- Datos para el bootstrap (2026-09-14): `sub` de Gabriel = `0bc75872-d050-42f0-8529-a656209da8c2`
+  (id en `janus.users`); tenant de la suite = `a0000000-0000-0000-0000-000000000001` ("Default").
 
 - [ ] `hipótesis`: tras un app sleeping / redeploy la sesión MCP en memoria se pierde, el servidor
       responde 404 y **el cliente de Claude Code re-inicializa solo** (la spec MCP lo exige al

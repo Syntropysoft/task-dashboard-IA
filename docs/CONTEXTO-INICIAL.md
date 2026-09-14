@@ -3,6 +3,12 @@
 > Nota de arranque escrita el 2026-09-13, al cerrar una sesión de trabajo en Convertix
 > (`motor-ventas`), donde nació la idea. Leela al abrir el primer chat de este proyecto.
 > Es un punto de partida para discutir, no un diseño cerrado.
+>
+> **Giro del 2026-09-13 (misma tarde):** el producto no es de Convertix — es para **cualquier
+> proyecto** (login + configuración del proyecto, y sirve para cualquier desarrollo). La identidad
+> la da **syntroAuth** (IdP de la suite, `github.com/gabriel70g/syntroAuth`); esta app solo
+> autoriza. Lo de abajo describe el caso que lo originó; el diseño vigente está en
+> `docs/PLAN-PASO-1.md`.
 
 ## El problema que resuelve
 
@@ -56,17 +62,17 @@ Las escrituras de estado de una ficha (cerrarla, moverla) siguen yendo por commi
 - ¿Andrés está de acuerdo y lo va a usar? (Si uno no lo usa, se repite lo de Firestore.)
   → 2026-09-13: se le muestra con el MCP andando. Seguimiento en `docs/TODO.md`.
 - ~~Hosting~~ **Decidido 2026-09-13: infra propia en Railway, con el mínimo de piezas facturables.**
-  Queda fuera del monorepo de Convertix (otra cosa, sin multi-tenant, sin sus invariantes) y del
-  crédito de AWS del piloto. Forma:
+  Queda fuera del monorepo de Convertix (otra cosa, con sus propias invariantes) y del crédito de
+  AWS del piloto. Es multi-proyecto desde la primera migración (`project_id` en todo). Forma:
   - **Un solo servicio** de aplicación: backend + MCP (HTTP) + indexador (job interno) + frontend
     (estáticos) en el mismo proceso. No hay razón para más de un servicio con dos usuarios.
   - **Postgres gestionado de Railway, 1 vCPU / 1 GB.** Se eligió sobre SQLite-en-volumen porque
     la diferencia de costo es chica y evita la migración si esto crece; escalar es cambiar el plan.
   - **App sleeping** activado: el servicio duerme sin tráfico. Por eso el indexador (paso 2) se
     dispara por webhook de push de GitHub, no por timer.
-  - El MCP es **remoto** (transporte Streamable HTTP, no stdio): los agentes de los dos devs se
-    conectan por red. Auth con un token por dev desde el día uno; la identidad sale del token, no
-    de un parámetro.
+  - El MCP es **remoto** (transporte Streamable HTTP, no stdio): los agentes se conectan por red
+    con un **PAT** emitido por esta app (un usuario en un proyecto). El usuario es el `sub` del
+    JWT de syntroAuth; el proyecto y la identidad salen del PAT, nunca de un parámetro.
   - Lenguaje: **Rust** (recomendado; `rmcp` + `axum` + `sqlx`) o .NET Native AOT. Ver
     `docs/PLAN-PASO-1.md`.
 - ¿Cómo lee el repo? Clon local, API de GitHub, o webhook de push. → Webhook (ver arriba); qué

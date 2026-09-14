@@ -1,6 +1,6 @@
 # task-dashboard-IA
 
-Coordinación entre dos devs y sus agentes sobre el mismo repo: reserva atómica de IDs, claims de
+Coordinación entre devs y sus agentes sobre un mismo repo, para cualquier proyecto: reserva atómica de IDs, claims de
 fichas (quién tiene qué AHORA) y sugerencias sueltas — lo que el markdown del repo no puede
 representar. El estado de las fichas sigue viviendo en el repo del proyecto; esto lo **lee**, no lo
 copia. **Un dato, un dueño.**
@@ -24,7 +24,8 @@ Sin código todavía. Está el contexto, el plan del paso 1 y el chasis de traba
 Ramas: `develop` para trabajar, `main` es lo desplegado (el merge deploya en Railway).
 
 Un solo servicio en **Railway** (backend + MCP por HTTP + indexador + frontend en un proceso) y un
-**Postgres** gestionado (1 vCPU / 1 GB). Lenguaje: Rust. Fecha dura del paso 1: **2026-09-30**.
+**Postgres** gestionado (1 vCPU / 1 GB). Identidad: **syntroAuth** (JWT + JWKS); esta app autoriza
+(proyectos, membresía, PATs para el MCP). Lenguaje: Rust. Fecha del paso 1: **2026-09-30**.
 
 Layout previsto del monorepo — se crea cuando entra el código, no antes:
 

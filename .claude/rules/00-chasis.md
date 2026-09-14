@@ -36,9 +36,9 @@ gates de Node y lo dice. ❌ NEVER citar clippy/test como corridos mientras no e
 
 ### 3.2 `eval-harness` — el fail-path es el entregable
 Por cada camino feliz nuevo, enumerar y probar sus modos de falla. Los de este repo, como piso:
-dos llamadas concurrentes al mismo recurso · base caída a mitad de una transacción · token
-inválido o ajeno · servicio dormido (app sleeping) que tarda en responder · claim de una ficha
-que ya cerró en el repo. Happy-path solo no cuenta como cobertura.
+dos llamadas concurrentes al mismo recurso · base caída a mitad de una transacción · PAT
+revocado o de otro proyecto · JWT vencido, con otro `aud` o con JWKS inaccesible · servicio
+dormido (app sleeping) que tarda en responder · claim de una ficha que ya cerró en el repo. Happy-path solo no cuenta como cobertura.
 
 ### 3.3 `strategic-compact` — comprimir sin perder el hilo
 En tareas largas, consolidar el estado en un punto de control legible ANTES de que el contexto se
@@ -61,11 +61,20 @@ barrera para un ADR es extremadamente alta.
   ✅ ALWAYS error explícito y esperar (un reintento con espera es aceptable; inventar, nunca) —
   el 2026-09-12/13 dos sesiones ejecutaron la misma `MVC-0385` y tomaron IDs ya usados: es el bug
   que este repo existe para matar.
-- ❌ NEVER una herramienta MCP que acepte la identidad (`quien`) por parámetro. ✅ ALWAYS la
-  identidad sale del bearer token — sin eso cualquier sesión libera el claim del otro
+- ❌ NEVER una herramienta MCP ni un endpoint que acepte identidad (`quien`) o `proyecto` por
+  parámetro. ✅ ALWAYS el usuario es el `sub` del JWT de syntroAuth y, en `/mcp`, usuario **y**
+  proyecto salen del PAT — sin eso cualquier sesión libera el claim del otro o lee otro proyecto
   (decisión 2026-09-13, `docs/PLAN-PASO-1.md`).
-- ❌ NEVER un token de dev, `DATABASE_URL` ni un `.env` con valores en el repo. ✅ ALWAYS variables
-  en Railway y `.env.example` sin valores — el MCP es remoto y el token es la única barrera.
+- ❌ NEVER una query sobre `id_sequences`, `id_reservations`, `claims`, `suggestions` o
+  `access_tokens` sin `project_id` en el `WHERE`. ✅ ALWAYS fail-closed: sin proyecto resuelto no
+  hay query — es multi-proyecto desde la primera migración, y una fuga entre proyectos es el bug
+  inaceptable aunque ocurra una vez.
+- ❌ NEVER usuarios, contraseñas ni proveedores OAuth propios. ✅ ALWAYS syntroAuth autentica y
+  esta app autoriza (regla de la suite, `syntroAuth/_docs/PROPUESTA_ROL_POR_APP.md`) — un IdP que
+  se duplica en cada app es el problema que syntroAuth existe para evitar.
+- ❌ NEVER un PAT, `DATABASE_URL` ni un `.env` con valores en el repo; ❌ NEVER guardar el secreto
+  de un PAT, solo su hash. ✅ ALWAYS variables en Railway y `.env.example` sin valores — el MCP es
+  remoto y el PAT es la única barrera.
 - ❌ NEVER agregar una pieza facturable (worker, cron, segundo contenedor) sin decisión escrita en
   `docs/CONTEXTO-INICIAL.md`. ✅ ALWAYS todo en el único proceso `apps/api` — el objetivo de
   costo es un servicio + un Postgres (2026-09-13).

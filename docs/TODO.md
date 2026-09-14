@@ -15,13 +15,15 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [ ] 0. Stack decidido (Rust recomendado; alternativa .NET AOT con spike previo)
 - [ ] 1. Scaffolding + `/health` + Dockerfile + deploy vacío en Railway + Postgres
 - [ ] 2. Migraciones con el esquema
-- [ ] 3. Auth bearer → dev
+- [ ] 3a. JWT de syntroAuth validado contra JWKS (`/api/me`)
+- [ ] 3b. API mínima: projects / members / tokens (PAT) / sequences
+- [ ] 3c. Middleware PAT en `/mcp`
 - [ ] 4. `reservar_id` + test de concurrencia
 - [ ] 5. `tomar_ficha` / `liberar_ficha` / `fichas_tomadas`
 - [ ] 6. `sugerir`
 - [ ] 7. MCP sobre `/mcp` con las 5 herramientas, probado desde Claude Code
-- [ ] 8. Seed del contador con el máximo ID real de Convertix
-- [ ] 9. Alta en los dos Claude Code + regla en el `CLAUDE.md` de Convertix
+- [ ] 8. Seed del contador `MVC` de Convertix con el máximo ID real del repo
+- [ ] 9. ⛔ Andrés: registro en syntroAuth, member, PAT, alta del MCP + regla en el `CLAUDE.md` de Convertix
 - [ ] 10. Firestore `backlog-mnc` apagado
 
 ## Decisiones abiertas
@@ -31,13 +33,27 @@ Los pasos numerados y su verificación están en `docs/PLAN-PASO-1.md`. Acá sol
 - [x] **Firestore es extensible.** Decidido 2026-09-13: se extienden las reglas de `backlog-mnc`
       un mes como red; el objetivo sigue siendo el 2026-09-30. — [ ] ⛔ hacer la extensión en la
       consola de Firebase (acción de Gabriel, fuera de este repo).
-- [ ] **Lectura del repo (paso 2): ¿solo `main` o por rama?** Decide si `proxima_ficha()` puede
-      ofrecer una ficha ya cerrada en una feature branch.
-- [ ] **Contrato del frontmatter de Convertix** (`prioridad-iniciativa`, prioridad de ficha,
-      "Depende de", `⛔ Trello`, `tema`). Decidido 2026-09-13: se escribe **acá**, en
-      `docs/CONTRATO-FRONTMATTER.md`, como spec del parser del indexador — el indexador lo valida,
-      así el doc no puede desincronizarse en silencio del código que lo lee. Convertix lo
-      referencia. Antes del paso 2.
+- [x] **Lectura del repo (paso 2)**: configuración por proyecto (`projects.branch`, default
+      `main`). Regla: lo que no está en esa rama no existe para el dashboard; el claim vivo cubre
+      el trabajo en otras ramas (2026-09-13).
+- [ ] **Contrato del frontmatter** (`prioridad-iniciativa`, prioridad de ficha, "Depende de",
+      `⛔`, `tema`). Decidido 2026-09-13: se escribe **acá**, en `docs/CONTRATO-FRONTMATTER.md`,
+      como schema de `projects.frontmatter_map` y spec del parser del indexador. Cada proyecto
+      consumidor lo referencia. Antes del paso 2.
+- [ ] **Acceso del indexador al repo de cada proyecto** (token de GitHub por proyecto vs GitHub
+      App). Paso 2.
+- [ ] El clon `source-2/syntropysoft/syntroAuth` está en `main` al 2026-08-14; `motor/syntroAuth`
+      tiene commits del 08-29 que ese main no tiene. Sincronizar antes de apoyarse en el contrato
+      del token.
+
+## Decisiones cerradas el 2026-09-13 (segunda ronda)
+
+- **Producto para cualquier proyecto**, no solo Convertix. Un proyecto = un repo (URL, rama,
+  prefijos de ID, mapeo de frontmatter). Convertix es el proyecto #1.
+- **Identidad: syntroAuth** (IdP de la suite, JWT RS256 + JWKS). Esta app autoriza: membresía y
+  PATs. Sin usuarios propios ni proveedores OAuth propios.
+- **Prioridad:** el paso 1 sigue primero, con `projects` y JWT desde el día uno. Login web y
+  pantalla de proyectos después (paso 1.5, antes del indexador).
 
 ## Chasis (pendientes de la instalación)
 

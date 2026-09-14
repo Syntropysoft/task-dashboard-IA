@@ -133,9 +133,12 @@ Railway. El pre-commit bloquea commits directos sobre `main` mientras exista `de
 ## Pasos siguientes (no planificados todavía)
 
 - Paso 2: indexador de solo lectura (webhook de push de GitHub) + `proxima_ficha()` + `estado(tema)`.
-- Paso 3: frontend del dashboard. Decidido 2026-09-14: primero la **maqueta en Claude Design**
-  (login con syntroAuth · proyectos · proyecto con Tokens / Contadores / Miembros / En vivo),
-  después del ítem 7, cuando el MCP ya responda; el código de `apps/web` va contra esa maqueta.
+- Paso 3: frontend del dashboard. Maqueta hecha en Claude Design el 2026-09-14 (estáticas):
+  https://claude.ai/code/artifact/87476512-c5d9-45bc-bbd5-15b63a6911d3 — dirección C "Tablero"
+  elegida entre tres; paleta triádica del círculo cromático desde el naranja (oklch, matices
+  45°/165°/285°: naranja = acción, verde = vivo, violeta = sugerencias) y marca = triángulo en
+  los tres colores. Pantallas: Login (syntroAuth), Proyectos, Proyecto · En vivo / Tokens /
+  Contadores / Miembros. El código de `apps/web` va contra esa maqueta.
 
 ---
 
